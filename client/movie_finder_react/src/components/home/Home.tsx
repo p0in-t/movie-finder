@@ -11,7 +11,7 @@ const Home = () => {
 
     const sendPromptToBackend = async (promptText: string) => {
         try {
-            const response = await fetch('http://localhost:5000/api/process', {
+            const response = await fetch('https://movie-finder-n03o.onrender.com/api/process', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
