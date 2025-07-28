@@ -1,0 +1,2 @@
+server/assets/*.pkl filter=lfs diff=lfs merge=lfs -text
+server/assets/*.bin filter=lfs diff=lfs merge=lfs -text
