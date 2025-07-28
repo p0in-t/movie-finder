@@ -5,6 +5,7 @@ import faiss
 from sklearn.preprocessing import normalize
 import os
 from thefuzz import process
+import traceback
 
 OVERVIEW_WEIGHT = 1.0
 GENRE_WEIGHT = 2.0
@@ -15,8 +16,8 @@ NARRATIVE_WEIGHT = 2.0
 THEMES_WEIGHT = 2.0
 COMBINED_CLASSIFIED_WEIGHT = 2.5
 
-FAISS_INDEX_PATH = 'server/assets/movie_similarity_index.bin'
-DF_PATH = 'server/assets/movie_dataframe.pkl'
+FAISS_INDEX_PATH = 'assets/movie_similarity_index.bin'
+DF_PATH = 'assets/movie_dataframe.pkl'
 
 def get_movie_embeddings_from_db(cursor, movie_id):
     cursor.execute("""
@@ -248,6 +249,7 @@ def load_or_build_index(connect, cursor):
             return movie_df, faiss_index
         except Exception as e:
             print(f"Error loading existing files: {e}")
+            traceback.print_exc()  # <== this prints the full stack trace of the error
             print("Rebuilding index...")
     
     print("Building new FAISS index and dataframe...")
