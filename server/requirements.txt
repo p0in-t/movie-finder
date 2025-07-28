@@ -4,7 +4,7 @@ python-dotenv
 psycopg2-binary
 numpy
 pandas
-faiss-cpu
+faiss-cpu==1.10.0
 scikit-learn
 thefuzz
 langchain
