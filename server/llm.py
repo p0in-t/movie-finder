@@ -13,8 +13,10 @@ from langgraph.graph import StateGraph, END
 from langchain_core.runnables import RunnableLambda
 from movie_similarity_search import find_similar_movies, find_id_by_title, find_movies_by_id, find_movies_by_description
 
+GEMINI_API_KEY = os.environ.get('GEMINI_KEY')
+
 model = ChatGoogleGenerativeAI(
-    google_api_key="AIzaSyBRNeqFxx67kRd0L5ZQXS8ZXaP3gENeMGQ",
+    google_api_key=GEMINI_API_KEY,
     model="gemini-2.5-flash",
     temperature=1.0,
 )
