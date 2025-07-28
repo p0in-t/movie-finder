@@ -15,8 +15,8 @@ NARRATIVE_WEIGHT = 2.0
 THEMES_WEIGHT = 2.0
 COMBINED_CLASSIFIED_WEIGHT = 2.5
 
-FAISS_INDEX_PATH = 'assets/movie_similarity_index.bin'
-DF_PATH = 'assets/movie_dataframe.pkl'
+FAISS_INDEX_PATH = 'server/assets/movie_similarity_index.bin'
+DF_PATH = 'server/assets/movie_dataframe.pkl'
 
 def get_movie_embeddings_from_db(cursor, movie_id):
     cursor.execute("""
