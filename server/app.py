@@ -104,8 +104,8 @@ def initialize_system():
     agent, graph = init_llm(movie_search_tool)
     print("EVerything initialized!")
 
-    cursor.close()
-    conn.close()
+    # cursor.close()
+    # conn.close()
 
     global app_state
     app_state = AppState(

@@ -12,6 +12,9 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, END
 from langchain_core.runnables import RunnableLambda
 from movie_similarity_search import find_similar_movies, find_id_by_title, find_movies_by_id, find_movies_by_description
+from dotenv import load_dotenv
+
+load_dotenv()
 
 GEMINI_API_KEY = os.environ.get('GEMINI_KEY')
 
