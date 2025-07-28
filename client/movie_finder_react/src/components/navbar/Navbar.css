@@ -1,0 +1,111 @@
+.navbar-container {
+    display: flex;
+    align-items: center;
+    height: 15vh;
+    background-image: linear-gradient(#343434, #343434);
+    border-radius: 40px;
+    margin: 20px;
+    box-shadow: inset 0 0 200px rgba(0, 0, 0, 0.37);
+    border: 2px;
+    border-style: inset;
+    border-color: #03356e;
+}
+
+.login-element {
+    display: flex;
+    flex-direction: row;
+}
+
+.account-element {
+    display: flex;
+    flex-direction: row;
+}
+
+.nav {
+    display: flex;
+    flex-direction: row;
+    list-style-type: none;
+    width: 100%;
+    height: 100%;
+    justify-content: right;
+}
+
+.nav-home {
+    display: flex;
+    align-items: center;
+    margin-left: 50px;
+    height: fit-content;
+    text-align: center;
+}
+
+.nav-entry {
+    display: flex;
+    justify-content: right;
+    align-items: center;
+    margin-left: auto;
+    margin-right: 50px;
+    margin-left: 5px;
+}
+
+.navbar-link {
+    text-decoration: none;
+    font-family: 'Stylish', sans-serif;;
+    font-size: 26px;
+    display: inline-block;
+    cursor: pointer;
+    margin: 20px;
+    position: relative;
+
+    background-image: radial-gradient(
+        ellipse at center,
+        rgb(255, 255, 255) 0%,
+        rgb(255, 255, 255) 50%,
+        rgb(47, 137, 255) 50%
+    );
+
+    background-size: 350% 200%;
+    background-position: -100% 20%;
+
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+
+    transition: background-position 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.navbar-link:hover {
+    background-position: -160% 0%;
+}
+
+.navbar-link::after {
+    content: '';
+    position: absolute;
+    width: 0; 
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: #0389ff;
+
+    transition: width 0.7s ease-in-out;
+}
+
+.navbar-link:hover::after {
+    width: 100%;
+}
+
+.navbar-home {
+    color: rgb(255, 255, 255);
+    text-decoration: none;
+    font-family: 'Stylish', sans-serif;;
+    font-size: 52px;
+    font-weight: bold;
+    position: relative;
+    padding-bottom: 5px;
+    transition: color 0.3s ease;
+}
+
+.navbar-home:hover{
+    color: #497dca;
+}
