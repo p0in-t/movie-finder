@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState } from 'react';
 import './App.css'
 import NavRoutes from "./components/nav_routes/NavRoutes";
 import Navbar from "./components/navbar/Navbar";
@@ -15,7 +15,7 @@ const defaultAppContextValue: AppContextType = {
 export const AppContext = createContext<AppContextType>(defaultAppContextValue);
 
 function App() {
-  const [ test, setTest ] = useState<number>(1);
+  const [ test, _ ] = useState<number>(1);
 
   return (
     <>

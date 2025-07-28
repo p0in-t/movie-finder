@@ -1,10 +1,7 @@
 import './Home.css'
 import { useState, useEffect, useRef } from 'react';
-import { useContext } from 'react';
-import { AppContext } from '../../App';
 
 const Home = () => {
-    const ctx = useContext(AppContext);
     const [messageInput, setMessageInput] = useState('');
     const [msgHistory, setMsgHistory] = useState<{id: number, text: string, isUser: boolean, isVisible: boolean}[]>([]);
     const chatDisplayRef = useRef<HTMLDivElement>(null);
