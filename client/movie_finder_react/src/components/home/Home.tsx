@@ -8,7 +8,7 @@ const Home = () => {
 
     const sendPromptToBackend = async (promptText: string) => {
         try {
-            const response = await fetch('https://movie-finder-n03o.onrender.com/api/process', {
+            const response = await fetch('https://movie-finder-980543701851.europe-west1.run.app/api/process', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
