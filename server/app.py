@@ -18,7 +18,7 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
-CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173"], supports_credentials=True)
+CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://movie-finder-ivory.vercel.app"], supports_credentials=True)
 
 @dataclass
 class AppState:
@@ -90,8 +90,10 @@ def get_db_connection():
 
 def initialize_system():
     print("Connecting to database...")
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    # conn = get_db_connection()
+    # cursor = conn.cursor()
+    conn = None
+    cursor = None
     print("Loading index and movie dataframe...")
     movie_df, faiss_index = load_or_build_index(conn, cursor)
     print("Loading model...")
