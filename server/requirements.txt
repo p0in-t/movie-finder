@@ -1,0 +1,14 @@
+Flask
+flask-cors
+python-dotenv
+psycopg2-binary
+numpy
+pandas
+faiss-cpu
+scikit-learn
+thefuzz
+langchain
+langchain-google-genai
+langgraph
+sentence-transformers
+gunicorn
