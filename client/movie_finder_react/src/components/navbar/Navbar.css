@@ -1,68 +1,79 @@
+/* In your global CSS file (e.g., index.css or App.css) */
 *, *::before, *::after {
-    box-sizing: border-box;
+    box-sizing: border-box; /* This is CRUCIAL */
 }
 
 body, html {
-    overflow-x: hidden;
-    width: 100%;
+    overflow-x: hidden; /* Prevent horizontal scroll on the entire page */
+    width: 100%; /* Ensure html/body take full width and don't create overflow */
+    margin: 0; /* Remove default body margin */
+    padding: 0; /* Remove default body padding */
 }
+
+/* --- Navbar.css (Revised for Desktop & Mobile responsiveness) --- */
 
 .navbar-container {
     display: flex;
     align-items: center;
     height: 15vh;
-    min-width: 25vw; /* This can be an issue on very small screens, reconsider or override */
+    /* REMOVED: min-width: 25vw;  -- This was a major culprit. Let flexbox handle width */
+    width: calc(100% - 40px); /* Explicitly calculate width, accounting for its own 20px margin on each side */
     background-image: linear-gradient(#343434, #343434);
     border-radius: 40px;
-    margin: 20px;
+    margin: 20px; /* This creates 20px margin on each side of the navbar */
     box-shadow: inset 0 0 200px rgba(0, 0, 0, 0.37);
     border: 2px;
     border-style: inset;
     border-color: #03356e;
-    /* Ensure content doesn't overflow horizontally without wrapping on desktop */
-    flex-wrap: nowrap;
-    overflow-x: hidden; /* Hide horizontal scrollbar if content slightly overflows */
+    overflow-x: hidden; /* Hide any overflow within the navbar itself */
+    flex-wrap: nowrap; /* Prevent wrapping on desktop by default */
+    justify-content: space-between; /* Distribute space between home and nav links */
 }
 
 .login-element {
     display: flex;
     flex-direction: row;
+    /* Ensure no fixed width or excessive margin/padding here */
 }
 
 .account-element {
     display: flex;
     flex-direction: row;
+    /* Ensure no fixed width or excessive margin/padding here */
 }
 
 .nav {
     display: flex;
-    flex-direction: row;
+    flex-direction: row; /* Keep horizontal on desktop */
     list-style-type: none;
-    width: 100%;
+    width: auto; /* Let content dictate width here, not 100% which could clash with justify-content */
     height: 100%;
-    justify-content: right;
-    align-items: center; /* Ensures vertical alignment of nav items */
+    /* Removed: justify-content: right; -- now handled by parent .navbar-container justify-content: space-between */
+    align-items: center;
+    padding: 0; /* Ensure no default padding */
+    margin: 0; /* Ensure no default margin */
 }
 
 .nav-home {
     display: flex;
     align-items: center;
-    margin-left: 50px;
+    margin-left: 50px; /* Keep desktop margin */
     height: fit-content;
     text-align: center;
+    /* Add flex-shrink: 0; to prevent it from shrinking too much if space is tight */
+    flex-shrink: 0;
 }
 
 .nav-entry {
     display: flex;
-    justify-content: right; /* Keeps links aligned right within their entry box */
+    justify-content: center; /* Centering content within the entry */
     align-items: center;
-    margin-left: 5px; /* Fine for spacing between entries */
-    margin-right: 50px; /* Provides spacing from the right edge of the navbar */
-    /* Remove `margin-left: auto;` here if it's causing issues.
-       It's often used on the first item to push others right, or on the last to push itself right.
-       In .nav (flex container), justify-content: right already pushes everything right. */
+    /* Simplify margins: let flexbox gap or a single margin handle spacing */
+    /* REMOVED: margin-left: auto; -- this was pushing the second group of links far right */
+    margin-right: 50px; /* Keep desktop margin, will be adjusted for mobile */
+    margin-left: 5px; /* Spacing between nav items */
+    flex-shrink: 0; /* Prevent items from shrinking if space is tight */
 }
-
 
 .navbar-link {
     text-decoration: none;
@@ -90,6 +101,7 @@ body, html {
     -webkit-text-fill-color: transparent;
 
     transition: background-position 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap; /* Prevent text from wrapping within the link */
 }
 
 .navbar-link:hover {
@@ -104,7 +116,6 @@ body, html {
     bottom: 0;
     left: 0;
     background-color: #0389ff;
-
     transition: width 0.7s ease-in-out;
 }
 
@@ -121,6 +132,7 @@ body, html {
     position: relative;
     padding-bottom: 5px;
     transition: color 0.3s ease;
+    white-space: nowrap; /* Prevent text from wrapping */
 }
 
 .navbar-home:hover{
@@ -132,59 +144,73 @@ body, html {
 /* For screens smaller than 768px (typical tablet portrait / large phone landscape) */
 @media (max-width: 768px) {
     .navbar-container {
-        min-width: unset; /* Override desktop min-width */
+        width: calc(100% - 20px); /* Reduce outer margin effect */
+        margin: 10px; /* Smaller margin for mobile */
         height: auto; /* Allow height to adjust */
-        margin: 10px; /* Reduce overall margin */
-        flex-direction: column; /* Stack children vertically */
-        align-items: center; /* Center stacked items horizontally */
-        border-radius: 20px; /* Slightly smaller radius */
-        padding: 10px 0; /* Add vertical padding */
-        overflow-x: hidden; /* Prevent horizontal scrollbar from appearing */
+        flex-direction: row; /* KEEP HORIZONTAL on mobile (your preference) */
+        flex-wrap: wrap; /* IMPORTANT: Allow items to wrap to a new line */
+        justify-content: center; /* Center items if they wrap */
+        border-radius: 20px; /* Smaller radius */
+        padding: 5px 0; /* Reduce padding */
     }
 
     .nav-home {
-        margin-left: 0; /* Remove fixed left margin */
-        margin-bottom: 10px; /* Add space below the home link */
-        text-align: center; /* Ensure text is centered */
-        width: 100%; /* Make it take full width to center effectively */
+        margin-left: 0; /* Remove desktop margin */
+        padding: 5px 10px; /* Add some internal padding */
+        font-size: 36px; /* Smaller font size */
+        margin-bottom: 5px; /* Space between home and other links if wrapping */
+        text-align: center; /* Center home text */
+        width: 100%; /* Make it take full width so it's on its own line */
     }
 
     .navbar-home {
-        font-size: 38px; /* Reduce font size for mobile */
-        margin: 0 auto; /* Center it horizontally within its container */
+        font-size: 36px; /* Smaller font size for home */
+        margin: 0; /* No external margin for home link */
+        text-align: center;
     }
 
     .nav {
-        flex-direction: column; /* Stack nav list items vertically */
-        justify-content: center; /* Center items within the list */
-        align-items: center; /* Center nav items horizontally */
+        flex-direction: row; /* Keep horizontal */
+        flex-wrap: wrap; /* Allow wrapping of nav items */
+        justify-content: center; /* Center them when they wrap */
+        align-items: center;
         width: 100%; /* Take full width */
-        height: auto; /* Adjust height based on content */
-        padding: 0; /* Ensure no extra padding */
+        height: auto;
+        padding: 0;
+        margin: 0;
     }
 
     .nav-entry {
-        margin: 5px 0; /* Vertical spacing, no horizontal pushing */
-        justify-content: center; /* Center the link within its entry */
-        width: 100%; /* Make each entry take full width */
+        /* Reset justify-content/align-items if they clash with outer flex */
+        margin: 5px 10px; /* Reduced and more consistent spacing between items */
+        justify-content: center;
+        width: auto; /* Let content dictate width */
+        flex-shrink: 1; /* Allow items to shrink if absolutely necessary */
     }
 
     .navbar-link {
-        font-size: 20px; /* Reduce font size for mobile links */
-        margin: 10px 0; /* Adjust margins for stacked links */
-        display: block; /* Make links block-level to ensure they stack */
-        text-align: center; /* Center the text within the block link */
+        font-size: 18px; /* Smaller font size for links */
+        margin: 5px 10px; /* Reduced margin around links */
+        white-space: nowrap; /* Keep text on one line */
+        padding: 0; /* Ensure no extra padding */
     }
 }
 
 /* For even smaller screens (typical phone portrait) */
 @media (max-width: 480px) {
+    .navbar-container {
+        border-radius: 15px;
+        margin: 5px; /* Even smaller margins */
+        width: calc(100% - 10px);
+        padding: 3px 0;
+    }
+
     .navbar-home {
-        font-size: 30px; /* Further reduce font size */
+        font-size: 28px; /* Further reduce for tiny screens */
     }
 
     .navbar-link {
-        font-size: 16px; /* Further reduce font size */
-        margin: 5px 0; /* Reduce margins even more */
+        font-size: 14px; /* Further reduce for tiny screens */
+        margin: 3px 6px; /* Reduce margins even more */
     }
 }
