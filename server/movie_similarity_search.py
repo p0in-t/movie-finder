@@ -281,6 +281,33 @@ def load_or_build_index(connect, cursor):
     
     return movie_df, faiss_index
 
+def cloud_load_or_build(connect, cursor):
+    print("v1:Current working directory:", os.getcwd())
+    print("faiss index path exists: ", os.path.exists(FAISS_INDEX_PATH))
+
+    # if os.path.exists(FAISS_INDEX_PATH) and os.path.exists(DF_PATH):
+    #     print("Loading existing FAISS index and dataframe...")
+    #     try:
+    #         movie_df = pd.read_pickle(DF_PATH)
+    #         faiss_index = faiss.read_index(FAISS_INDEX_PATH)
+    #         print(f"Loaded existing index with {faiss_index.ntotal} movies")
+    #         return movie_df, faiss_index
+    #     except Exception as e:
+    #         print(f"Error loading existing files: {e}")
+    #         traceback.print_exc()
+    #         print("Rebuilding index...")
+    
+    print("Building new FAISS index and dataframe...")
+    movie_df, faiss_index = load_all_movies_and_build_index(connect, cursor)
+    
+    print("Saving index and dataframe for future use...")
+    os.makedirs('assets', exist_ok=True)
+    faiss.write_index(faiss_index, FAISS_INDEX_PATH)
+    movie_df.to_pickle(DF_PATH)
+    print("Assets saved successfully!")
+    
+    return movie_df, faiss_index
+
 def test():
     try:
         print("Loading movies and building FAISS index...")

@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from dotenv import load_dotenv
 from llm import init_llm
-from movie_similarity_search import load_or_build_index
+from movie_similarity_search import cloud_load_or_build, load_or_build_index
 from dataclasses import dataclass, field
 from llm import MovieSearchTool
 from sentence_transformers import SentenceTransformer
@@ -95,7 +95,7 @@ def initialize_system():
     # conn = None
     # cursor = None
     print("Loading index and movie dataframe...")
-    movie_df, faiss_index = load_or_build_index(conn, cursor)
+    movie_df, faiss_index = cloud_load_or_build(conn, cursor)
     print("Loading model...")
     sbert_model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
     print("Initializing movie search tool...")
