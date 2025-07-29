@@ -235,11 +235,7 @@ def load_all_movies_and_build_index(connect, cursor):
 
 def load_or_build_index(connect, cursor):
     print("Current working directory:", os.getcwd())
-    print("Files in CWD:", os.listdir(os.getcwd()))
-    for root, dirs, files in os.walk("."):
-        print("DIR:", root)
-        for f in files:
-            print("   ", f)
+
     if os.path.exists(FAISS_INDEX_PATH) and os.path.exists(DF_PATH):
         print("Loading existing FAISS index and dataframe...")
         try:
