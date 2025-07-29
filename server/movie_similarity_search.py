@@ -236,7 +236,7 @@ def load_all_movies_and_build_index(connect, cursor):
 def build_index():
     movie_df = pd.read_pickle(DF_PATH)
     
-    print(f"Loaded {len(df)} movies with embeddings")
+    print(f"Loaded {len(movie_df)} movies with embeddings")
         
     composite_vectors = []
     for _, movie in movie_df.iterrows():
