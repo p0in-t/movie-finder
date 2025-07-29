@@ -2,7 +2,7 @@
     display: flex;
     align-items: center;
     height: 15vh;
-    min-width: 25vw;
+    min-width: 25vw; /* This can be an issue on very small screens, reconsider or override */
     background-image: linear-gradient(#343434, #343434);
     border-radius: 40px;
     margin: 20px;
@@ -10,6 +10,9 @@
     border: 2px;
     border-style: inset;
     border-color: #03356e;
+    /* Ensure content doesn't overflow horizontally without wrapping on desktop */
+    flex-wrap: nowrap;
+    overflow-x: hidden; /* Hide horizontal scrollbar if content slightly overflows */
 }
 
 .login-element {
@@ -29,6 +32,7 @@
     width: 100%;
     height: 100%;
     justify-content: right;
+    align-items: center; /* Ensures vertical alignment of nav items */
 }
 
 .nav-home {
@@ -41,20 +45,23 @@
 
 .nav-entry {
     display: flex;
-    justify-content: right;
+    justify-content: right; /* Keeps links aligned right within their entry box */
     align-items: center;
-    margin-left: auto;
-    margin-right: 50px;
-    margin-left: 5px;
+    margin-left: 5px; /* Fine for spacing between entries */
+    margin-right: 50px; /* Provides spacing from the right edge of the navbar */
+    /* Remove `margin-left: auto;` here if it's causing issues.
+       It's often used on the first item to push others right, or on the last to push itself right.
+       In .nav (flex container), justify-content: right already pushes everything right. */
 }
+
 
 .navbar-link {
     text-decoration: none;
-    font-family: 'Stylish', sans-serif;;
-    font-size: 26px;
+    font-family: 'Stylish', sans-serif;
+    font-size: 26px; /* Desktop font size */
     display: inline-block;
     cursor: pointer;
-    margin: 20px;
+    margin: 20px; /* Desktop margin */
     position: relative;
 
     background-image: radial-gradient(
@@ -83,7 +90,7 @@
 .navbar-link::after {
     content: '';
     position: absolute;
-    width: 0; 
+    width: 0;
     height: 2px;
     bottom: 0;
     left: 0;
@@ -99,8 +106,8 @@
 .navbar-home {
     color: rgb(255, 255, 255);
     text-decoration: none;
-    font-family: 'Stylish', sans-serif;;
-    font-size: 52px;
+    font-family: 'Stylish', sans-serif;
+    font-size: 52px; /* Desktop font size */
     font-weight: bold;
     position: relative;
     padding-bottom: 5px;
@@ -109,4 +116,66 @@
 
 .navbar-home:hover{
     color: #497dca;
+}
+
+/* --- Responsive Adjustments using Media Queries --- */
+
+/* For screens smaller than 768px (typical tablet portrait / large phone landscape) */
+@media (max-width: 768px) {
+    .navbar-container {
+        min-width: unset; /* Override desktop min-width */
+        height: auto; /* Allow height to adjust */
+        margin: 10px; /* Reduce overall margin */
+        flex-direction: column; /* Stack children vertically */
+        align-items: center; /* Center stacked items horizontally */
+        border-radius: 20px; /* Slightly smaller radius */
+        padding: 10px 0; /* Add vertical padding */
+        overflow-x: hidden; /* Prevent horizontal scrollbar from appearing */
+    }
+
+    .nav-home {
+        margin-left: 0; /* Remove fixed left margin */
+        margin-bottom: 10px; /* Add space below the home link */
+        text-align: center; /* Ensure text is centered */
+        width: 100%; /* Make it take full width to center effectively */
+    }
+
+    .navbar-home {
+        font-size: 38px; /* Reduce font size for mobile */
+        margin: 0 auto; /* Center it horizontally within its container */
+    }
+
+    .nav {
+        flex-direction: column; /* Stack nav list items vertically */
+        justify-content: center; /* Center items within the list */
+        align-items: center; /* Center nav items horizontally */
+        width: 100%; /* Take full width */
+        height: auto; /* Adjust height based on content */
+        padding: 0; /* Ensure no extra padding */
+    }
+
+    .nav-entry {
+        margin: 5px 0; /* Vertical spacing, no horizontal pushing */
+        justify-content: center; /* Center the link within its entry */
+        width: 100%; /* Make each entry take full width */
+    }
+
+    .navbar-link {
+        font-size: 20px; /* Reduce font size for mobile links */
+        margin: 10px 0; /* Adjust margins for stacked links */
+        display: block; /* Make links block-level to ensure they stack */
+        text-align: center; /* Center the text within the block link */
+    }
+}
+
+/* For even smaller screens (typical phone portrait) */
+@media (max-width: 480px) {
+    .navbar-home {
+        font-size: 30px; /* Further reduce font size */
+    }
+
+    .navbar-link {
+        font-size: 16px; /* Further reduce font size */
+        margin: 5px 0; /* Reduce margins even more */
+    }
 }
