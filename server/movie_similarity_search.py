@@ -234,7 +234,8 @@ def load_all_movies_and_build_index(connect, cursor):
         connect.close()
 
 def load_or_build_index(connect, cursor):
-    print("Current working directory:", os.getcwd())
+    print("v1:Current working directory:", os.getcwd())
+    print("faiss index path exists: ", os.path.exists(FAISS_INDEX_PATH))
 
     if os.path.exists(FAISS_INDEX_PATH) and os.path.exists(DF_PATH):
         print("Loading existing FAISS index and dataframe...")
