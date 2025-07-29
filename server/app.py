@@ -13,8 +13,13 @@ import uuid
 import time
 from threading import Lock
 import atexit
+from google.cloud import storage
 
 load_dotenv()
+
+BUCKET_NAME = 'movies-db-bucket'
+MODEL_GCS_PREFIX = 'sbert_model/'
+LOCAL_MODEL_PATH = './sbert_model'
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
@@ -37,6 +42,42 @@ app_state = AppState()
 
 chat_sessions = {}
 session_lock = Lock()
+
+def load_model_from_gcs():
+    if os.path.exists(LOCAL_MODEL_PATH):
+        print(f"Found model locally at {LOCAL_MODEL_PATH}. Loading from disk.")
+        return SentenceTransformer(LOCAL_MODEL_PATH, device='cpu')
+
+    print(f"Model not found locally. Downloading from gs://{BUCKET_NAME}/{MODEL_GCS_PREFIX}")
+
+    os.makedirs(LOCAL_MODEL_PATH, exist_ok=True)
+
+    try:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(BUCKET_NAME)
+
+        blobs = bucket.list_blobs(prefix=MODEL_GCS_PREFIX)
+
+        for blob in blobs:
+            if blob.name.endswith('/'):
+                continue
+
+            relative_path = blob.name[len(MODEL_GCS_PREFIX):]
+            local_file_path = os.path.join(LOCAL_MODEL_PATH, relative_path)
+
+            os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
+            
+            print(f"Downloading {blob.name} to {local_file_path}...")
+            blob.download_to_filename(local_file_path)
+
+        print("Model download complete.")
+
+    except Exception as e:
+        print(f"ERROR: Failed to download model from GCS. {e}")
+        raise RuntimeError(f"Could not download model from GCS: {e}")
+
+    print(f"Loading model from newly downloaded files at {LOCAL_MODEL_PATH}")
+    return SentenceTransformer(LOCAL_MODEL_PATH, device='cpu')
 
 def get_or_create_session():
     if 'session_id' not in session:
@@ -97,7 +138,7 @@ def initialize_system():
     print("Loading index and movie dataframe...")
     movie_df, faiss_index = cloud_load_or_build(conn, cursor)
     print("Loading model...")
-    sbert_model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
+    sbert_model = load_model_from_gcs()
     print("Initializing movie search tool...")
     movie_search_tool = MovieSearchTool(faiss_index=faiss_index, movie_df=movie_df, model=sbert_model)
     print("Initializing LLM...")
