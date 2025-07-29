@@ -216,6 +216,10 @@ def on_shutdown():
 
 atexit.register(on_shutdown)
 
+if not initialize_system():
+    print("FATAL: System initialization failed. Exiting.")
+    exit(1)
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
     if initialize_system():
