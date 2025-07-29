@@ -13,3 +13,4 @@ langchain-community
 langgraph
 sentence-transformers
 gunicorn
+google-cloud-storage
