@@ -233,6 +233,27 @@ def load_all_movies_and_build_index(connect, cursor):
         cursor.close()
         connect.close()
 
+def build_index():
+    movie_df = pd.read_pickle(DF_PATH)
+    
+    print(f"Loaded {len(df)} movies with embeddings")
+        
+    composite_vectors = []
+    for _, movie in movie_df.iterrows():
+        movie_dict = movie.to_dict()
+        composite_vector = create_composite_vector(movie_dict)
+        composite_vectors.append(composite_vector[0])
+    
+    composite_vectors = np.array(composite_vectors).astype('float32')
+    
+    d = composite_vectors.shape[1]
+    index = faiss.IndexFlatIP(d)
+    index.add(composite_vectors)
+    
+    print(f"Built FAISS index with {index.ntotal} vectors of dimension {d}")
+    
+    return movie_df, index
+
 def load_or_build_index(connect, cursor):
     print("v1:Current working directory:", os.getcwd())
     print("faiss index path exists: ", os.path.exists(FAISS_INDEX_PATH))
@@ -240,8 +261,8 @@ def load_or_build_index(connect, cursor):
     if os.path.exists(FAISS_INDEX_PATH) and os.path.exists(DF_PATH):
         print("Loading existing FAISS index and dataframe...")
         try:
-            faiss_index = faiss.read_index(FAISS_INDEX_PATH)
             movie_df = pd.read_pickle(DF_PATH)
+            faiss_index = faiss.read_index(FAISS_INDEX_PATH)
             print(f"Loaded existing index with {faiss_index.ntotal} movies")
             return movie_df, faiss_index
         except Exception as e:
@@ -250,7 +271,7 @@ def load_or_build_index(connect, cursor):
             print("Rebuilding index...")
     
     print("Building new FAISS index and dataframe...")
-    movie_df, faiss_index = load_all_movies_and_build_index(connect, cursor)
+    movie_df, faiss_index = build_index()
     
     print("Saving index and dataframe for future use...")
     os.makedirs('assets', exist_ok=True)
