@@ -518,7 +518,7 @@ def human_input(state):
     return {"augmented_query": user_input, "messages": new_messages}
 
 def movie_retrieval_id(state):
-    augmented_query = f"I need to find a specific movie with the ID from the following query: {state["input"]}"
+    augmented_query = f"I need to find a specific movie with the ID from the following query: {state['input']}"
     return {"augmented_query": augmented_query}
 
 def movie_retrieval_description(state):
@@ -526,7 +526,7 @@ def movie_retrieval_description(state):
     return {"augmented_query": augmented_query}
 
 def movie_retrieval_similarity(state):
-    augmented_query = f"I need to find all movies that are similar to the specific movie in this query: {state["input"]}"
+    augmented_query = f"I need to find all movies that are similar to the specific movie in this query: {state['input']}"
     return {"augmented_query": augmented_query}
 
 def check_current_date(state):

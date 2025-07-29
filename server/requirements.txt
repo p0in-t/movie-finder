@@ -4,11 +4,12 @@ python-dotenv
 psycopg2-binary
 numpy
 pandas
-faiss-cpu==1.10.0
+faiss-cpu
 scikit-learn
 thefuzz
 langchain
 langchain-google-genai
+langchain-community
 langgraph
 sentence-transformers
 gunicorn

@@ -90,10 +90,8 @@ def get_db_connection():
 
 def initialize_system():
     print("Connecting to database...")
-    # conn = get_db_connection()
-    # cursor = conn.cursor()
-    conn = None
-    cursor = None
+    conn = get_db_connection()
+    cursor = conn.cursor()
     print("Loading index and movie dataframe...")
     movie_df, faiss_index = load_or_build_index(conn, cursor)
     print("Loading model...")
@@ -104,8 +102,8 @@ def initialize_system():
     agent, graph = init_llm(movie_search_tool)
     print("EVerything initialized!")
 
-    # cursor.close()
-    # conn.close()
+    cursor.close()
+    conn.close()
 
     global app_state
     app_state = AppState(
