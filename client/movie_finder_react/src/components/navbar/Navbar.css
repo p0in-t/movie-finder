@@ -1,107 +1,82 @@
-/* In your global CSS file (e.g., index.css or App.css) */
 *, *::before, *::after {
-    box-sizing: border-box; /* This is CRUCIAL */
+    box-sizing: border-box;
 }
 
 body, html {
-    overflow-x: hidden; /* Prevent horizontal scroll on the entire page */
-    width: 100%; /* Ensure html/body take full width and don't create overflow */
-    margin: 0; /* Remove default body margin */
-    padding: 0; /* Remove default body padding */
+    overflow-x: hidden;
+    width: 100%;
+    margin: 0;
+    padding: 0;
 }
-
-/* --- Navbar.css (Revised for Desktop & Mobile responsiveness) --- */
 
 .navbar-container {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     height: 15vh;
-    /* REMOVED: min-width: 25vw;  -- This was a major culprit. Let flexbox handle width */
-    width: calc(100% - 40px); /* Explicitly calculate width, accounting for its own 20px margin on each side */
+    width: calc(100% - 40px);
     background-image: linear-gradient(#343434, #343434);
     border-radius: 40px;
-    margin: 20px; /* This creates 20px margin on each side of the navbar */
+    margin: 20px;
     box-shadow: inset 0 0 200px rgba(0, 0, 0, 0.37);
-    border: 2px;
-    border-style: inset;
-    border-color: #03356e;
-    overflow-x: hidden; /* Hide any overflow within the navbar itself */
-    flex-wrap: nowrap; /* Prevent wrapping on desktop by default */
-    justify-content: space-between; /* Distribute space between home and nav links */
+    border: 2px inset #03356e;
+    overflow: hidden;
+    flex-wrap: nowrap;
 }
 
-.login-element {
+.login-element, .account-element {
     display: flex;
     flex-direction: row;
-    /* Ensure no fixed width or excessive margin/padding here */
-}
-
-.account-element {
-    display: flex;
-    flex-direction: row;
-    /* Ensure no fixed width or excessive margin/padding here */
 }
 
 .nav {
     display: flex;
-    flex-direction: row; /* Keep horizontal on desktop */
+    flex-direction: row;
     list-style-type: none;
-    width: auto; /* Let content dictate width here, not 100% which could clash with justify-content */
+    width: auto;
     height: 100%;
-    /* Removed: justify-content: right; -- now handled by parent .navbar-container justify-content: space-between */
     align-items: center;
-    padding: 0; /* Ensure no default padding */
-    margin: 0; /* Ensure no default margin */
+    padding: 0;
+    margin: 0;
 }
 
 .nav-home {
     display: flex;
     align-items: center;
-    margin-left: 50px; /* Keep desktop margin */
-    height: fit-content;
-    text-align: center;
-    /* Add flex-shrink: 0; to prevent it from shrinking too much if space is tight */
+    margin-left: 50px;
     flex-shrink: 0;
 }
 
 .nav-entry {
     display: flex;
-    justify-content: center; /* Centering content within the entry */
+    justify-content: center;
     align-items: center;
-    /* Simplify margins: let flexbox gap or a single margin handle spacing */
-    /* REMOVED: margin-left: auto; -- this was pushing the second group of links far right */
-    margin-right: 50px; /* Keep desktop margin, will be adjusted for mobile */
-    margin-left: 5px; /* Spacing between nav items */
-    flex-shrink: 0; /* Prevent items from shrinking if space is tight */
+    margin-right: 50px;
+    margin-left: 5px;
+    flex-shrink: 0;
 }
 
 .navbar-link {
     text-decoration: none;
     font-family: 'Stylish', sans-serif;
-    font-size: 26px; /* Desktop font size */
-    display: inline-block;
+    font-size: 26px;
     cursor: pointer;
-    margin: 20px; /* Desktop margin */
+    margin: 20px;
     position: relative;
-
     background-image: radial-gradient(
         ellipse at center,
         rgb(255, 255, 255) 0%,
         rgb(255, 255, 255) 50%,
         rgb(47, 137, 255) 50%
     );
-
     background-size: 350% 200%;
     background-position: -100% 20%;
-
     -webkit-background-clip: text;
     background-clip: text;
-
     color: transparent;
     -webkit-text-fill-color: transparent;
-
     transition: background-position 1.5s cubic-bezier(0.4, 0, 0.2, 1);
-    white-space: nowrap; /* Prevent text from wrapping within the link */
+    white-space: nowrap;
 }
 
 .navbar-link:hover {
@@ -127,90 +102,74 @@ body, html {
     color: rgb(255, 255, 255);
     text-decoration: none;
     font-family: 'Stylish', sans-serif;
-    font-size: 52px; /* Desktop font size */
+    font-size: 52px;
     font-weight: bold;
-    position: relative;
     padding-bottom: 5px;
     transition: color 0.3s ease;
-    white-space: nowrap; /* Prevent text from wrapping */
+    white-space: nowrap;
 }
 
-.navbar-home:hover{
+.navbar-home:hover {
     color: #497dca;
 }
 
-/* --- Responsive Adjustments using Media Queries --- */
+/* =================================== */
+/*           RESPONSIVE STYLES         */
+/* =================================== */
 
-/* For screens smaller than 768px (typical tablet portrait / large phone landscape) */
 @media (max-width: 768px) {
     .navbar-container {
-        width: calc(100% - 20px); /* Reduce outer margin effect */
-        margin: 10px; /* Smaller margin for mobile */
-        height: auto; /* Allow height to adjust */
-        flex-direction: row; /* KEEP HORIZONTAL on mobile (your preference) */
-        flex-wrap: wrap; /* IMPORTANT: Allow items to wrap to a new line */
-        justify-content: center; /* Center items if they wrap */
-        border-radius: 20px; /* Smaller radius */
-        padding: 5px 0; /* Reduce padding */
+        flex-direction: column;
+        align-items: center;
+        height: auto;
+        padding: 20px 0;
+        width: calc(100% - 20px);
+        margin: 10px;
+        border-radius: 20px;
     }
 
     .nav-home {
-        margin-left: 0; /* Remove desktop margin */
-        padding: 5px 10px; /* Add some internal padding */
-        font-size: 36px; /* Smaller font size */
-        margin-bottom: 5px; /* Space between home and other links if wrapping */
-        text-align: center; /* Center home text */
-        width: 100%; /* Make it take full width so it's on its own line */
+        margin-left: 0;
+        margin-bottom: 10px;
     }
 
     .navbar-home {
-        font-size: 36px; /* Smaller font size for home */
-        margin: 0; /* No external margin for home link */
-        text-align: center;
+        font-size: 36px;
     }
 
     .nav {
-        flex-direction: row; /* Keep horizontal */
-        flex-wrap: wrap; /* Allow wrapping of nav items */
-        justify-content: center; /* Center them when they wrap */
-        align-items: center;
-        width: 100%; /* Take full width */
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
         height: auto;
-        padding: 0;
-        margin: 0;
     }
 
     .nav-entry {
-        /* Reset justify-content/align-items if they clash with outer flex */
-        margin: 5px 10px; /* Reduced and more consistent spacing between items */
-        justify-content: center;
-        width: auto; /* Let content dictate width */
-        flex-shrink: 1; /* Allow items to shrink if absolutely necessary */
+        flex-shrink: 1;
+        margin: 5px 10px;
     }
 
     .navbar-link {
-        font-size: 18px; /* Smaller font size for links */
-        margin: 5px 10px; /* Reduced margin around links */
-        white-space: nowrap; /* Keep text on one line */
-        padding: 0; /* Ensure no extra padding */
+        font-size: 20px;
+        margin: 5px;
     }
 }
 
-/* For even smaller screens (typical phone portrait) */
 @media (max-width: 480px) {
     .navbar-container {
         border-radius: 15px;
-        margin: 5px; /* Even smaller margins */
+        margin: 5px;
         width: calc(100% - 10px);
-        padding: 3px 0;
+        padding: 10px 0;
     }
 
     .navbar-home {
-        font-size: 28px; /* Further reduce for tiny screens */
+        font-size: 28px;
     }
 
     .navbar-link {
-        font-size: 14px; /* Further reduce for tiny screens */
-        margin: 3px 6px; /* Reduce margins even more */
+        font-size: 16px;
+        margin: 3px 6px;
     }
 }
