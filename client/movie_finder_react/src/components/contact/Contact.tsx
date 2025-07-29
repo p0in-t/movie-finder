@@ -1,11 +1,12 @@
 import './Contact.css';
+import React from 'react';
 
-const Contact = () => {
-    const handleSubmit = (event) => {
+const Contact: React.FC = () => {
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        alert('Your message has been sent!')
-    }
+        alert('Your message has been sent!');
+    };
 
     return (
         <div className='contact-main-container'>
@@ -85,7 +86,7 @@ const Contact = () => {
 
                     <div className='text-area-container'>
                         <label htmlFor="message">Feel free to leave a message!</label><br/>
-                        <textarea type="textarea" rows="3" placeholder="Message..." name="message" required></textarea><br/>
+                        <textarea rows={3} placeholder="Message..." name="message" required></textarea><br/>
                     </div>
 
                     <div className="checkbox-wrapper-4">
