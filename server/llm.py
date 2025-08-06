@@ -502,20 +502,14 @@ def parse_input(user_input):
 def human_input(state):
     print("HUMAN INPUT")
     user_input = state['input']
-    message_input = "User: " + user_input
 
-    if "messages" not in state:
-        new_messages = [message_input]
-    else:
-        messages = state["messages"]
-        max_messages = 10
+    messages = state["messages"]
+    max_messages = 10
 
-        if len(messages) > max_messages:
-            messages = messages[-max_messages:]
-
-        new_messages = messages + [message_input]
+    if len(messages) > max_messages:
+        messages = messages[-max_messages:]
     
-    return {"augmented_query": user_input, "messages": new_messages}
+    return {"augmented_query": user_input, "messages": messages}
 
 def movie_retrieval_id(state):
     augmented_query = f"I need to find a specific movie with the ID from the following query: {state['input']}"
@@ -554,9 +548,7 @@ def final_answer(state):
     print("FINAL_ANSWER")
     intent = state["intent"]
     final_answer = state["final_answer"]["output"] if intent != "uncertain_query" else "I can not help you with that, please try again!"
-    message_input = "Movie Finder Assistant: " + final_answer
-    new_messages = state["messages"] + [message_input]
-    return {"messages": new_messages}
+    return {"final_answer": final_answer}
 
 def route_after_classification(state):
     intent = state["intent"]
