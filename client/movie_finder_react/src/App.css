@@ -1,5 +1,6 @@
 html, body {
   height: 100%;
+  width: 100%;
   margin: 0px;
   overflow-y: auto;
   overflow-x: auto;
@@ -7,12 +8,13 @@ html, body {
 }
 
 .app {
+  display: flex;
+  flex-direction: column; 
   text-align: center;
   height: 100%;
   overflow-y: auto;
   overflow-x: auto;
   min-height: 100vh;
   position: relative;
-  padding-bottom: 20vh;
   background-color: rgb(26, 26, 26);
 }
