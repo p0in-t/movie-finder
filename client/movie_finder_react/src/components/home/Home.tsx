@@ -1,6 +1,6 @@
 import './Home.css'
 import { useState, useEffect, useRef, useContext } from 'react';
-import { AppSidebar } from "../sidebar/Sidebar"
+import AppSidebar from "../sidebar/Sidebar"
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from '../ui/skeleton';
 import { UserContext } from '@/App';

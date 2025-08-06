@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from "react";
 import { AppContext, UserContext, SettingsContext } from '../../App';
 import { Button } from "@/components/ui/button";
 import { Settings, ChevronsLeft, Menu, Contact, Info, ChevronUp } from "lucide-react";
-import { ContactForm } from "../contact/Contact";
+import ContactForm from "../contact/Contact"
 import {
     Dialog,
     DialogTrigger,
@@ -20,15 +20,14 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar"
-import { SettingsApp } from "../settings/Settings";
+import SettingsApp from "../settings/Settings";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Login } from "../login/Login";
-import { c } from "node_modules/framer-motion/dist/types.d-Cjd591yU";
 
-export function AppSidebar() {
+export default function AppSidebar() {
     const navigate = useNavigate();
     const [ open, setOpen ] = useState(true)
-    const { isLoggedIn, username, sessionID, setUserCtx } = useContext(UserContext)
+    const { isLoggedIn, username, setUserCtx } = useContext(UserContext)
     const { userSessions, setAppCtx } = useContext(AppContext)
     const { setSettingsCtx } = useContext(SettingsContext)
     const [ loginDialogOpen, setLoginDialogOpen ] = useState(false)

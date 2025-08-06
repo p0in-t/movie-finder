@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/tabs"
 import { useState, useEffect, useContext } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react"
+import { CheckCircle2Icon } from "lucide-react"
 import {
     Alert,
     AlertTitle,
@@ -42,7 +42,7 @@ function AlertSave() {
     );
 }
 
-export function SettingsApp() {
+export default function SettingsApp() {
     const [submitted, setSubmitted] = useState(false)
     const { geminiApiKey, setSettingsCtx } = useContext(SettingsContext);
 

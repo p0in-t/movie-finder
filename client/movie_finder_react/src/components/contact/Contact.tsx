@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from '../ui/textarea';
 import { useState, useEffect } from "react";
-import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react"
+import { CheckCircle2Icon } from "lucide-react"
 import {
     Alert,
     AlertDescription,
@@ -34,7 +34,7 @@ function AlertSend() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
-            style={{ overflow: "hidden" }} // important!
+            style={{ overflow: "hidden" }}
             className='dark mb-4'
         >
             <Alert>
@@ -48,7 +48,7 @@ function AlertSend() {
     );
 }
 
-export function ContactForm() {
+export default function ContactForm() {
     const [submitted, setSubmitted] = useState(false)
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
