@@ -15,7 +15,7 @@ const Home = () => {
     const { id } = useParams<{ id: string }>();
 
     const sendPromptToBackend = async (promptText: string, skeletonMessageId: number) => {
-        if (!(isLoggedIn && sessionID !== -1 && isActive && emailVerified && hasGeminiAPIKey))
+        if (!(isLoggedIn && sessionID !== -1 && isActive && emailVerified))
             throw new Error(`User is not authorized`);
 
         setIsResponding(true);
