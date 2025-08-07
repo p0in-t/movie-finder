@@ -14,7 +14,7 @@ const Home = () => {
     const { isLoggedIn, sessionID, username, isActive, emailVerified, hasGeminiAPIKey } = useContext(UserContext);
     const { id } = useParams<{ id: string }>();
 
-    const sendPromptToBackend = async (promptText: string, skeletonMessageId: number) => {
+    const sendPromptToBackend = async (promptText: string, sid: number, skeletonMessageId: number) => {
         console.log(sessionID)
 
         if (!(isLoggedIn && sessionID !== -1 && isActive && emailVerified))
@@ -27,7 +27,7 @@ const Home = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ prompt: promptText }),
+                body: JSON.stringify({ prompt: promptText, session_id: sid }),
                 credentials: 'include',
             });
 
@@ -105,7 +105,7 @@ const Home = () => {
 
             setMsgHistory(prevMessages => [...prevMessages, userMessage, skeletonMessage]);
             setMessageInput('');
-            sendPromptToBackend(trimmedMessage, skeletonMessageId);
+            sendPromptToBackend(trimmedMessage, sessionID, skeletonMessageId);
         }
     };
 
