@@ -209,8 +209,12 @@ def start_session():
         cur.close()
         conn.close()
 
-@app.route('/api/user/get-sessions', methods=['GET'])
+@app.route('/api/user/get-sessions', methods=['GET', 'OPTIONS'])
 def get_sessions():
+    if request.method == 'OPTIONS':
+        print("Got OPTIONS request")
+        return '', 204
+    
     if not session.get('logged_in'):
         return jsonify({"error": "Unauthorized", "result": False}), 401
 
