@@ -25,7 +25,17 @@ LOCAL_MODEL_PATH = './sbert_model'
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
-CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://movie-finder-ivory.vercel.app"], supports_credentials=True, resources={r"/api/*": {"origins": "https://movie-finder-ivory.vercel.app"}})
+CORS(app,
+     supports_credentials=True,
+     origins=[
+         "https://movie-finder-ivory.vercel.app",
+         "http://localhost:5173",
+         "http://127.0.0.1:5173",
+     ],
+     methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+     expose_headers=["Content-Type", "Authorization"],
+     max_age=3600)
 
 FERNET_KEY = os.environ.get('FERNET_KEY')
 
@@ -208,6 +218,10 @@ def start_session():
     finally:
         cur.close()
         conn.close()
+
+@app.before_request
+def log_request():
+    print(f"[REQUEST] Method: {request.method}, Path: {request.path}, Headers: {dict(request.headers)}")
 
 @app.route('/api/user/get-sessions', methods=['GET', 'OPTIONS'])
 def get_sessions():
