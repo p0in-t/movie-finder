@@ -15,6 +15,8 @@ const Home = () => {
     const { id } = useParams<{ id: string }>();
 
     const sendPromptToBackend = async (promptText: string, skeletonMessageId: number) => {
+        console.log(sessionID)
+
         if (!(isLoggedIn && sessionID !== -1 && isActive && emailVerified))
             throw new Error(`User is not authorized`);
 

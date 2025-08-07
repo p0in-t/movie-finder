@@ -174,7 +174,14 @@ export default function AppSidebar() {
 
     const handleSelectChat = (id: number) => {
         console.log(userSessions);
-        navigate(`/chat/${id}`);
+        if (id !== null && id !== undefined) {
+            setUserCtx(prevSettings => ({
+                ...prevSettings,
+                sessionID: id
+            }));
+            console.log(isLoggedIn, id, username);
+            navigate(`/chat/${id}`);
+        }
     }
 
     useEffect(() => {
