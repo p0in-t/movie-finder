@@ -111,7 +111,7 @@ def get_session_messages(session_id, user_id):
         messages = cur.fetchall()
 
         message_list = [
-            {"id": row[0], "sender": row[1], "message": row[2], "sent_at": row[2].isoformat()}
+            {"id": row[0], "sender": row[1], "message": row[2], "sent_at": row[3].isoformat()}
             for row in messages
         ]
 
@@ -377,7 +377,6 @@ def user_login():
 
         session.modified = True
 
-
         print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
 
         return jsonify({
@@ -491,7 +490,13 @@ def process_data():
 
         try:
             session_messages_result = get_session_messages(session_id, user_id)
-            session_messages = format_chat_history(session_messages_result)
+
+            if not session_messages_result.get("result"):
+                return jsonify(session_messages_result), 500
+            
+            messages_list = session_messages_result.get("messages", [])
+    
+            session_messages = format_chat_history(messages_list)
             
             response = app_state.graph.invoke({
                 "input": user_prompt,
@@ -626,7 +631,5 @@ if not initialize_system():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
-    if initialize_system():
-        app.run(host="0.0.0.0", port=port)
-    else:
-        exit(1)
+    app.run(host="0.0.0.0", port=port)
+    exit(1)
