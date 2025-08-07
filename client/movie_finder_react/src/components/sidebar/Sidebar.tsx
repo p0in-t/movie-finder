@@ -162,7 +162,7 @@ export default function AppSidebar() {
     const handleCreateSession = async () => {
         const newSessionID = await sendStartSession();
         console.log(isLoggedIn, newSessionID, username);
-        if (newSessionID !== null) {
+        if (newSessionID !== null  && newSessionID !== undefined) {
             setUserCtx(prevSettings => ({
                 ...prevSettings,
                 sessionID: newSessionID
