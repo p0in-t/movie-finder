@@ -55,7 +55,7 @@ const Home = () => {
     };
 
     const sendGetSession = async (sid: number) => {
-        if (!(isLoggedIn && isActive && emailVerified && hasGeminiAPIKey))
+        if (!(isLoggedIn && isActive && emailVerified))
             throw new Error(`User is not authorized`);
 
         try {
