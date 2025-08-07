@@ -283,12 +283,12 @@ export default function AppSidebar() {
                                     <SidebarMenuButton>
                                         { isLoggedIn ? (
                                             <a>
-                                                <MessageCirclePlus />
+                                                <UserRound />
                                                 <span>{username}</span>
                                             </a>
                                         ) : (
                                             <a>
-                                                <MessageCirclePlus />
+                                                <UserRound />
                                                 <span>Log in</span>
                                             </a>
                                         )
