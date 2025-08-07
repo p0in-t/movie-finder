@@ -33,6 +33,8 @@ export default function AppSidebar() {
     const [ loginDialogOpen, setLoginDialogOpen ] = useState(false)
 
     const sendLogoutRequest = async () => {
+        console.log("trying to log out")
+
         try {
             const response = await fetch('https://movie-finder-980543701851.europe-west1.run.app/api/user/log-out', {
                 method: 'POST',
@@ -84,6 +86,8 @@ export default function AppSidebar() {
     };
 
     const sendGetSessions = async () => {
+        console.log("trying to get sessions")
+
         try {
             const response = await fetch('https://movie-finder-980543701851.europe-west1.run.app/api/user/get-sessions', {
                 method: 'GET',
@@ -118,6 +122,8 @@ export default function AppSidebar() {
     };
     
     const sendStartSession = async () => {
+        console.log("trying to start session")
+
         try {
             const response = await fetch('https://movie-finder-980543701851.europe-west1.run.app/api/user/start-session', {
                 method: 'GET',
@@ -155,13 +161,13 @@ export default function AppSidebar() {
 
     const handleCreateSession = async () => {
         const newSessionID = await sendStartSession();
-        console.log(newSessionID);
+        console.log(isLoggedIn, newSessionID, username);
         if (newSessionID !== null) {
             setUserCtx(prevSettings => ({
                 ...prevSettings,
                 sessionID: newSessionID
             }));
-            console.log(newSessionID);
+            console.log(isLoggedIn, newSessionID, username);
             navigate(`/chat/${newSessionID}`);
         }
     }
@@ -171,8 +177,9 @@ export default function AppSidebar() {
     }
 
     useEffect(() => {
-        sendGetSessions()
-    }, []);
+        if (isLoggedIn)
+            sendGetSessions()
+    }, [isLoggedIn]);
     
     return (
         <>

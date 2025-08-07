@@ -130,6 +130,8 @@ const Home = () => {
                 handleGetChat(parsedId);
             }
         }
+
+        console.log(isLoggedIn, sessionID, username, isActive, emailVerified, hasGeminiAPIKey);
     }, [id, isLoggedIn]);
 
     return (
