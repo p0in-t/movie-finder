@@ -631,7 +631,5 @@ if not initialize_system():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
-    if initialize_system():
-        app.run(host="0.0.0.0", port=port)
-    else:
-        exit(1)
+    app.run(host="0.0.0.0", port=port)
+    exit(1)
