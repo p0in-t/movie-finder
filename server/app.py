@@ -476,7 +476,7 @@ def process_data():
         """, (session_id, "user", user_prompt))
 
         try:
-            session_messages_result = get_session_messages(session_id)
+            session_messages_result = get_session_messages(session_id, user_id)
             session_messages = format_chat_history(session_messages_result)
             
             response = app_state.graph.invoke({
