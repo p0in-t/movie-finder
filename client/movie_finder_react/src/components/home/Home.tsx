@@ -141,6 +141,8 @@ const Home = () => {
             console.log("getting chat useeffect")
             handleGetChat(sessionID);
         }
+        else
+            setMsgHistory([]);
     }, [id, isLoggedIn, sessionID, userID]);
 
     return (
