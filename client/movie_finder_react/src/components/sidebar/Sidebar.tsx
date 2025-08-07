@@ -168,6 +168,18 @@ export default function AppSidebar() {
                 ...prevSettings,
                 sessionID: newSessionID
             }));
+            setAppCtx(prev => ({
+                ...prev,
+                userSessions: [
+                    ...prev.userSessions,
+                    {
+                        session_id: newSessionID,
+                        title: "Untitled chat",
+                        started_at: new Date(),
+
+                    }
+                ]
+            }));
             console.log(isLoggedIn, newSessionID, username);
             navigate(`/chat/${newSessionID}`);
         }
