@@ -55,6 +55,8 @@ const Home = () => {
     };
 
     const sendGetSession = async (sid: number) => {
+        console.log("getting chat")
+
         if (!(isLoggedIn && isActive && emailVerified))
             throw new Error(`User is not authorized`);
 
@@ -128,6 +130,7 @@ const Home = () => {
     }, [msgHistory]);
 
     useEffect(() => {
+        console.log("from useffect for loading chat")
         const parsedId = parseInt(id ?? '', 10);
 
         if (
@@ -137,6 +140,7 @@ const Home = () => {
             sessionID !== -1 &&
             userID !== -1
         ) {
+            console.log("getting chat useeffect")
             handleGetChat(parsedId);
         }
     }, [id, isLoggedIn, sessionID, userID]);
