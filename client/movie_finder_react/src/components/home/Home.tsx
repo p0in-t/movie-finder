@@ -11,7 +11,7 @@ const Home = () => {
     const [msgHistory, setMsgHistory] = useState<{ id: number, text: string, isUser: boolean, isLoading?: boolean }[]>([]);
     const [isResponding, setIsResponding] = useState(false);
     const chatDisplayRef = useRef<HTMLDivElement>(null);
-    const { isLoggedIn, sessionID, username, isActive, emailVerified, hasGeminiAPIKey } = useContext(UserContext);
+    const { isLoggedIn, userID, sessionID, username, isActive, emailVerified, hasGeminiAPIKey } = useContext(UserContext);
     const { id } = useParams<{ id: string }>();
 
     const sendPromptToBackend = async (promptText: string, sid: number, skeletonMessageId: number) => {
@@ -128,18 +128,18 @@ const Home = () => {
     }, [msgHistory]);
 
     useEffect(() => {
-        if (id) {
-            const parsedId = parseInt(id, 10);
-            if (!isNaN(parsedId)) {
-                handleGetChat(parsedId);
-            }
-            else {
-                setMsgHistory([]);
-            }
-        }
+        const parsedId = parseInt(id ?? '', 10);
 
-        console.log(isLoggedIn, sessionID, username, isActive, emailVerified, hasGeminiAPIKey);
-    }, [id, isLoggedIn]);
+        if (
+            isLoggedIn &&
+            id &&
+            !isNaN(parsedId) &&
+            sessionID !== -1 &&
+            userID !== -1
+        ) {
+            handleGetChat(parsedId);
+        }
+    }, [id, isLoggedIn, sessionID, userID]);
 
     return (
         <div className='main-container flex h-screen'>
