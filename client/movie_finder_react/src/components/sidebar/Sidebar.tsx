@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
 import { AppContext, UserContext, SettingsContext } from '../../App';
 import { Button } from "@/components/ui/button";
-import { Settings, ChevronsLeft, Menu, Contact, Info, ChevronUp } from "lucide-react";
+import { Settings, ChevronsLeft, Menu, Contact, Info, ChevronUp, MessageCirclePlus, UserRound } from "lucide-react";
 import ContactForm from "../contact/Contact"
 import {
     Dialog,
@@ -251,7 +251,10 @@ export default function AppSidebar() {
                         </SidebarMenuItem>
                         <SidebarMenuItem key='start-chat'>
                             <SidebarMenuButton onClick={() => handleCreateSession()} asChild className="text-gray-200 hover:bg-neutral-800 hover:text-white">
-                                <span>Start new chat</span>
+                                <a>
+                                    <MessageCirclePlus />
+                                    <span>Start a new chat</span>
+                                </a>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     </SidebarMenu>
@@ -279,9 +282,15 @@ export default function AppSidebar() {
                                 <DropdownMenuTrigger asChild>
                                     <SidebarMenuButton>
                                         { isLoggedIn ? (
-                                            <span>{username}</span>
+                                            <a>
+                                                <MessageCirclePlus />
+                                                <span>{username}</span>
+                                            </a>
                                         ) : (
-                                            <span>Logged out</span>
+                                            <a>
+                                                <MessageCirclePlus />
+                                                <span>Log in</span>
+                                            </a>
                                         )
                                         }
                                         <ChevronUp className="ml-auto" />
