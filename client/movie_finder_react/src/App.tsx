@@ -13,7 +13,7 @@ const defaultSettingsContextValue: SettingsContextType = {
   setSettingsCtx: () => { },
 };
 
-type Session = { "id": number, "title": string, "started_at": Date};
+type Session = { "session_id": number, "title": string, "started_at": Date};
 
 interface AppContextType {
   userSessions: Session[];

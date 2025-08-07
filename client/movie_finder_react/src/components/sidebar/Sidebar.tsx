@@ -254,8 +254,8 @@ export default function AppSidebar() {
                     <SidebarGroupContent>
                     <SidebarMenu>
                         { isLoggedIn ? userSessions.map((session) => (
-                            <SidebarMenuItem key={session.id}>
-                                <SidebarMenuButton onClick={() => handleSelectChat(session.id)} asChild>
+                            <SidebarMenuItem key={session.session_id}>
+                                <SidebarMenuButton onClick={() => handleSelectChat(session.session_id)} asChild>
                                     <span>{session.title}</span>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
