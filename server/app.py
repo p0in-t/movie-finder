@@ -184,6 +184,8 @@ def initialize_system():
 
 @app.route('/api/user/start-session', methods=['GET'])
 def start_session():
+    print(session)
+
     if not session.get('logged_in'):
         return jsonify({"error": "Unauthorized", "result": False}), 401
 
@@ -211,6 +213,8 @@ def start_session():
 
 @app.route('/api/user/get-sessions', methods=['GET'])
 def get_sessions():
+    print(session)
+
     if not session.get('logged_in'):
         return jsonify({"error": "Unauthorized", "result": False}), 401
 
@@ -243,6 +247,8 @@ def get_sessions():
 
 @app.route('/api/user/get-chat', methods=['POST'])
 def get_chat_messages():
+    print(session)
+
     if not session.get('logged_in'):
         return jsonify({"error": "Unauthorized", "result": False}), 401
 
@@ -264,6 +270,8 @@ def get_chat_messages():
 
 @app.route('/api/user/sign-up', methods=['POST'])
 def user_create():
+    print(session)
+
     user_data = request.get_json(silent=True)
 
     if user_data is None:
@@ -310,6 +318,8 @@ def user_create():
 
 @app.route('/api/user/log-in', methods=['POST'])
 def user_login():
+    print(session)
+
     user_data = request.get_json()
 
     if user_data is None:
@@ -353,6 +363,9 @@ def user_login():
         if not bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8')):
             return jsonify({"error": "Invalid email or password", "result": False}), 401
 
+        print("Logged in!")
+        print(session)
+
         session['user_id'] = str(user_id)
         session['username'] = username
         session['logged_in'] = True
@@ -360,6 +373,9 @@ def user_login():
         session['is_admin'] = is_admin
         session['email_verified'] = email_verified
         session['has_gemini_api_key'] = has_gemini_api_key
+
+
+        print(session.get("logged_in"))
 
         return jsonify({
             "message": "Login successful",
@@ -381,6 +397,8 @@ def user_login():
 
 @app.route('/api/user/log-out', methods=['POST'])
 def user_logout():
+    print(session)
+    
     if not session.get('logged_in'):
         return jsonify({"message": "No active session to log out from", "result": False}), 200
 
@@ -406,6 +424,7 @@ def format_chat_history(messages):
 
 @app.route('/api/process', methods=['POST'])
 def process_data():
+    print(session)
     print("Entered /api/process route.")
     
     if not session.get('logged_in'):
@@ -530,6 +549,8 @@ def get_user_api_key():
 
 @app.route('/api/user/update-settings', methods=['POST'])
 def update_user_settings():
+    print(session)
+
     if not session.get('logged_in'):
         return jsonify({"error": "Unauthorized", "result": False}), 401
     
