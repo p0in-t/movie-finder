@@ -1,4 +1,4 @@
-import { createContext, useState } from 'react';
+import { createContext, useEffect, useState } from 'react';
 import './App.css'
 import NavRoutes from "./components/nav_routes/NavRoutes";
 import Navbar from "./components/navbar/Navbar";
@@ -90,6 +90,58 @@ function App() {
     ...user,
     setUserCtx: setUser,
   };
+
+  const setUserCtx = setUser;
+
+  const checkAuthStatus = async () => {
+    console.log("trying to get auth status")
+
+    try {
+      const response = await fetch('https://movie-finder-980543701851.europe-west1.run.app/api/user/auth-status', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      const result = data.result;
+
+      if (!result) {
+        setUserCtx(prevSettings => ({
+          ...prevSettings,
+          isLoggedIn: false 
+        }));
+        throw new Error(`Could not authorize user`);
+      }
+
+      setUserCtx(prevSettings => ({
+        ...prevSettings,
+        isLoggedIn: true,
+        sessionID: -1,
+        username: data.username,
+        userID: data.user_id,
+        isActive: data.is_active,
+        isAdmin: data.is_admin,
+        emailVerified: data.email_verified,
+        hasGeminiAPIKey: data.has_gemini_api_key,
+      }))
+    } catch (error) {
+      console.error("Error checking auth status", error);
+    } finally {
+      // setIsResponding(false);
+    }
+  };
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
 
   return (
     <>
