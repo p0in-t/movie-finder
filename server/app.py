@@ -26,6 +26,7 @@ LOCAL_MODEL_PATH = './sbert_model'
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
 CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://movie-finder-ivory.vercel.app"], supports_credentials=True)
+app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True)
 
 FERNET_KEY = os.environ.get('FERNET_KEY')
 
@@ -105,7 +106,7 @@ def get_session_messages(session_id, user_id):
             FROM chat_message
             WHERE session_id = %s
             ORDER BY id ASC;
-        """, (session_id))
+        """, (session_id,))
 
         messages = cur.fetchall()
 
@@ -184,6 +185,8 @@ def initialize_system():
 
 @app.route('/api/user/start-session', methods=['GET'])
 def start_session():
+    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
+
     if not session.get('logged_in'):
         return jsonify({"error": "Unauthorized", "result": False}), 401
 
@@ -196,7 +199,7 @@ def start_session():
             INSERT INTO chat_session (user_id)
             VALUES (%s)
             RETURNING id;
-        """, (user_id))
+        """, (user_id,))
         session_id = cur.fetchone()[0]
         conn.commit()
         return jsonify({"session_id": session_id, "result": True})
@@ -211,6 +214,8 @@ def start_session():
 
 @app.route('/api/user/get-sessions', methods=['GET'])
 def get_sessions():
+    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
+
     if not session.get('logged_in'):
         return jsonify({"error": "Unauthorized", "result": False}), 401
 
@@ -243,6 +248,8 @@ def get_sessions():
 
 @app.route('/api/user/get-chat', methods=['POST'])
 def get_chat_messages():
+    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
+
     if not session.get('logged_in'):
         return jsonify({"error": "Unauthorized", "result": False}), 401
 
@@ -264,6 +271,8 @@ def get_chat_messages():
 
 @app.route('/api/user/sign-up', methods=['POST'])
 def user_create():
+    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
+
     user_data = request.get_json(silent=True)
 
     if user_data is None:
@@ -310,6 +319,8 @@ def user_create():
 
 @app.route('/api/user/log-in', methods=['POST'])
 def user_login():
+    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
+
     user_data = request.get_json()
 
     if user_data is None:
@@ -353,6 +364,9 @@ def user_login():
         if not bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8')):
             return jsonify({"error": "Invalid email or password", "result": False}), 401
 
+        print("Logged in!")
+        print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
+
         session['user_id'] = str(user_id)
         session['username'] = username
         session['logged_in'] = True
@@ -360,6 +374,11 @@ def user_login():
         session['is_admin'] = is_admin
         session['email_verified'] = email_verified
         session['has_gemini_api_key'] = has_gemini_api_key
+
+        session.modified = True
+
+
+        print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
 
         return jsonify({
             "message": "Login successful",
@@ -381,10 +400,14 @@ def user_login():
 
 @app.route('/api/user/log-out', methods=['POST'])
 def user_logout():
+    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
+    
     if not session.get('logged_in'):
         return jsonify({"message": "No active session to log out from", "result": False}), 200
 
     session.clear()
+
+    session.modified = True
 
     return jsonify({"message": "Logout successful", "result": True})
 
@@ -406,6 +429,7 @@ def format_chat_history(messages):
 
 @app.route('/api/process', methods=['POST'])
 def process_data():
+    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
     print("Entered /api/process route.")
     
     if not session.get('logged_in'):
@@ -530,6 +554,8 @@ def get_user_api_key():
 
 @app.route('/api/user/update-settings', methods=['POST'])
 def update_user_settings():
+    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
+
     if not session.get('logged_in'):
         return jsonify({"error": "Unauthorized", "result": False}), 401
     
