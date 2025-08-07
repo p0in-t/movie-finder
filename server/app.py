@@ -25,17 +25,7 @@ LOCAL_MODEL_PATH = './sbert_model'
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
-CORS(app,
-     supports_credentials=True,
-     origins=[
-         "https://movie-finder-ivory.vercel.app",
-         "http://localhost:5173",
-         "http://127.0.0.1:5173",
-     ],
-     methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"],
-     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-     expose_headers=["Content-Type", "Authorization"],
-     max_age=3600)
+CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://movie-finder-ivory.vercel.app"], supports_credentials=True)
 
 FERNET_KEY = os.environ.get('FERNET_KEY')
 
@@ -176,7 +166,7 @@ def initialize_system():
     movie_search_tool = MovieSearchTool(faiss_index=faiss_index, movie_df=movie_df, model=sbert_model)
     print("Initializing LLM...")
     agent, graph = init_llm(movie_search_tool)
-    print("EVerything initialized!")
+    print("Everything initialized!")
 
     cursor.close()
     conn.close()
@@ -219,16 +209,8 @@ def start_session():
         cur.close()
         conn.close()
 
-@app.before_request
-def log_request():
-    print(f"[REQUEST] Method: {request.method}, Path: {request.path}, Headers: {dict(request.headers)}")
-
-@app.route('/api/user/get-sessions', methods=['GET', 'OPTIONS'])
+@app.route('/api/user/get-sessions', methods=['GET'])
 def get_sessions():
-    if request.method == 'OPTIONS':
-        print("Got OPTIONS request")
-        return '', 204
-    
     if not session.get('logged_in'):
         return jsonify({"error": "Unauthorized", "result": False}), 401
 
