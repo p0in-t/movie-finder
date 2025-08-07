@@ -14,3 +14,5 @@ langgraph
 sentence-transformers
 gunicorn
 google-cloud-storage
+bcrypt
+cryptography
