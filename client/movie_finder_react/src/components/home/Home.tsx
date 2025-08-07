@@ -11,7 +11,7 @@ const Home = () => {
     const [msgHistory, setMsgHistory] = useState<{ id: number, text: string, isUser: boolean, isLoading?: boolean }[]>([]);
     const [isResponding, setIsResponding] = useState(false);
     const chatDisplayRef = useRef<HTMLDivElement>(null);
-    const { isLoggedIn, userID, sessionID, username, isActive, emailVerified, hasGeminiAPIKey } = useContext(UserContext);
+    const { isLoggedIn, userID, sessionID, username, isActive, emailVerified } = useContext(UserContext);
     const { id } = useParams<{ id: string }>();
 
     const sendPromptToBackend = async (promptText: string, sid: number, skeletonMessageId: number) => {
