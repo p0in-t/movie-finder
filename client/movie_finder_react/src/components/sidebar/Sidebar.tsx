@@ -255,7 +255,7 @@ export default function AppSidebar() {
                     <SidebarMenu>
                         { isLoggedIn ? userSessions.map((session) => (
                             <SidebarMenuItem key={session.session_id}>
-                                <SidebarMenuButton onClick={() => handleSelectChat(session.session_id)} asChild>
+                                <SidebarMenuButton onClick={() => handleSelectChat(session.session_id)} asChild className="text-gray-200 hover:bg-neutral-800 hover:text-white">
                                     <span>{session.title}</span>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
