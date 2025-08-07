@@ -280,20 +280,14 @@ export default function AppSidebar() {
                         <SidebarMenuItem className="bg-neutral-900">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <SidebarMenuButton>
-                                        { isLoggedIn ? (
-                                            <a>
-                                                <UserRound />
-                                                <span>{username}</span>
-                                            </a>
-                                        ) : (
-                                            <a>
-                                                <UserRound />
-                                                <span>Log in</span>
-                                            </a>
-                                        )
-                                        }
-                                        <ChevronUp className="ml-auto" />
+                                    <SidebarMenuButton className="flex items-center space-x-2">
+                                        <UserRound className="w-6 h-6 flex-shrink-0" />
+                                        {open && (
+                                            <span className="truncate max-w-[8rem]">
+                                                {isLoggedIn ? username : "Log in"}
+                                            </span>
+                                        )}
+                                        <ChevronUp className={`ml-auto transition-transform ${open ? 'rotate-180' : ''}`} />
                                     </SidebarMenuButton>
                                 </DropdownMenuTrigger>
                                 { !isLoggedIn ? (
