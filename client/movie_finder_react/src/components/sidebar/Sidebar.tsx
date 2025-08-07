@@ -173,6 +173,7 @@ export default function AppSidebar() {
     }
 
     const handleSelectChat = (id: number) => {
+        console.log(userSessions);
         navigate(`/chat/${id}`);
     }
 
