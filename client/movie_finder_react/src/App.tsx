@@ -13,7 +13,7 @@ const defaultSettingsContextValue: SettingsContextType = {
   setSettingsCtx: () => { },
 };
 
-type Session = { "session_id": number, "title": string, "started_at": Date};
+type Session = { "session_id": string, "title": string, "started_at": Date};
 
 interface AppContextType {
   userSessions: Session[];
@@ -27,7 +27,7 @@ const defaultAppContextValue: AppContextType = {
 
 interface UserContextType {
   isLoggedIn: boolean;
-  sessionID: number;
+  sessionID: string;
   userID: number;
   email: string;
   username: string;
@@ -40,7 +40,7 @@ interface UserContextType {
 
 const defaultUserContextValue: UserContextType = {
   isLoggedIn: false,
-  sessionID: -1,
+  sessionID: "",
   userID: -1,
   email: "",
   username: "user",
@@ -66,7 +66,7 @@ function App() {
 
   const [user, setUser] = useState({
     isLoggedIn: false,
-    sessionID: -1,
+    sessionID: "",
     userID: -1,
     email: "",
     username: "user",
@@ -124,7 +124,7 @@ function App() {
       setUserCtx(prevSettings => ({
         ...prevSettings,
         isLoggedIn: true,
-        sessionID: -1,
+        sessionID: "",
         username: data.username,
         userID: data.user_id,
         isActive: data.is_active,

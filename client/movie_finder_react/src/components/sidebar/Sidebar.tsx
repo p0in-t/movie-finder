@@ -60,7 +60,7 @@ export default function AppSidebar() {
                 isLoggedIn: false,
                 userID: -1,
                 email: "",
-                sessionID: -1,
+                sessionID: "",
                 username: "user",
                 isActive: false,
                 isAdmin: false,
@@ -172,7 +172,7 @@ export default function AppSidebar() {
         }
     }
 
-    const handleSelectChat = (id: number) => {
+    const handleSelectChat = (id: string) => {
         console.log(userSessions);
         if (id !== null && id !== undefined) {
             setUserCtx(prevSettings => ({

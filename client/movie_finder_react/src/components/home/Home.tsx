@@ -14,10 +14,10 @@ const Home = () => {
     const { isLoggedIn, userID, sessionID, username, isActive, emailVerified } = useContext(UserContext);
     const { id } = useParams<{ id: string }>();
 
-    const sendPromptToBackend = async (promptText: string, sid: number, skeletonMessageId: number) => {
+    const sendPromptToBackend = async (promptText: string, sid: string, skeletonMessageId: number) => {
         console.log(sessionID)
 
-        if (!(isLoggedIn && sessionID !== -1 && isActive && emailVerified))
+        if (!(isLoggedIn && sessionID !== "" && isActive && emailVerified))
             throw new Error(`User is not authorized`);
 
         setIsResponding(true);
@@ -54,7 +54,7 @@ const Home = () => {
         }
     };
 
-    const sendGetSession = async (sid: number) => {
+    const sendGetSession = async (sid: string) => {
         console.log("getting chat")
 
         if (!(isLoggedIn && isActive && emailVerified))
@@ -96,7 +96,7 @@ const Home = () => {
         }
     };
 
-    const handleGetChat = (id: number) => {
+    const handleGetChat = (id: string) => {
         sendGetSession(id);
     }
 
@@ -131,17 +131,15 @@ const Home = () => {
 
     useEffect(() => {
         console.log("from useffect for loading chat")
-        const parsedId = parseInt(id ?? '', 10);
 
         if (
             isLoggedIn &&
             id &&
-            !isNaN(parsedId) &&
-            sessionID !== -1 &&
+            sessionID !== "" &&
             userID !== -1
         ) {
             console.log("getting chat useeffect")
-            handleGetChat(parsedId);
+            handleGetChat(sessionID);
         }
     }, [id, isLoggedIn, sessionID, userID]);
 
