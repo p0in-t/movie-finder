@@ -25,7 +25,7 @@ LOCAL_MODEL_PATH = './sbert_model'
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
-CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://movie-finder-ivory.vercel.app"], supports_credentials=True)
+CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://movie-finder-ivory.vercel.app"], supports_credentials=True, resources={r"/api/*": {"origins": "https://movie-finder-ivory.vercel.app"}})
 
 FERNET_KEY = os.environ.get('FERNET_KEY')
 
@@ -122,9 +122,6 @@ def get_session_messages(session_id, user_id):
     finally:
         cur.close()
         conn.close()
-
-def update_session_messages(session_id, messages):
-    return 0
 
 def get_db_connection():
     try:
@@ -294,7 +291,7 @@ def user_create():
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO public.users (username, email, password_hash)
-                    VALUES (%s, %s, %s, %s)
+                    VALUES (%s, %s, %s)
                     RETURNING id;
                 """, (username, email, password_hash))
 
