@@ -398,6 +398,20 @@ def user_login():
         cur.close()
         conn.close()
 
+@app.route('/api/user/auth-status', methods=['GET'])
+def auth_status():
+    if session.get("logged_in"):
+        return jsonify({
+            "result": True,
+            "user_id": session.get("user_id"),
+            "username": session.get("username"),
+            "is_active": session.get("is_active"),
+            "is_admin": session.get("is_admin"),
+            "email_verified": session.get("email_verified"),
+            "has_gemini_api_key": session.get("has_gemini_api_key"),
+        })
+    return jsonify({"result": False}), 401
+
 @app.route('/api/user/log-out', methods=['POST'])
 def user_logout():
     print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
