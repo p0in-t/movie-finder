@@ -155,11 +155,13 @@ export default function AppSidebar() {
 
     const handleCreateSession = async () => {
         const newSessionID = await sendStartSession();
+        console.log(newSessionID);
         if (newSessionID !== null) {
             setUserCtx(prevSettings => ({
                 ...prevSettings,
                 sessionID: newSessionID
             }));
+            console.log(newSessionID);
             navigate(`/chat/${newSessionID}`);
         }
     }
@@ -243,13 +245,13 @@ export default function AppSidebar() {
                     <SidebarGroupLabel className="text-gray-200">Previous chats</SidebarGroupLabel>
                     <SidebarGroupContent>
                     <SidebarMenu>
-                        {userSessions.map((session) => (
+                        { isLoggedIn ? userSessions.map((session) => (
                             <SidebarMenuItem key={session.id}>
                                 <SidebarMenuButton onClick={() => handleSelectChat(session.id)} asChild>
                                     <span>{session.title}</span>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
-                        ))}
+                        )) : <></>}
                     </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
