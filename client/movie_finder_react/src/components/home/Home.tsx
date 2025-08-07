@@ -131,6 +131,9 @@ const Home = () => {
             if (!isNaN(parsedId)) {
                 handleGetChat(parsedId);
             }
+            else {
+                setMsgHistory([]);
+            }
         }
 
         console.log(isLoggedIn, sessionID, username, isActive, emailVerified, hasGeminiAPIKey);
