@@ -75,6 +75,8 @@ const Home = () => {
             const data = await response.json();
             const result = data.result;
 
+            console.log("got messages: ", data)
+
             if (result && data.messages) {
                 const formattedMessages = data.messages.map((msg: { sender: string, message: string }, index: number) => ({
                     id: index,
