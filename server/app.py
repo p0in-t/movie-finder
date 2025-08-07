@@ -106,7 +106,7 @@ def get_session_messages(session_id, user_id):
             FROM chat_message
             WHERE session_id = %s
             ORDER BY id ASC;
-        """, (session_id))
+        """, (session_id,))
 
         messages = cur.fetchall()
 
@@ -199,7 +199,7 @@ def start_session():
             INSERT INTO chat_session (user_id)
             VALUES (%s)
             RETURNING id;
-        """, (user_id))
+        """, (user_id,))
         session_id = cur.fetchone()[0]
         conn.commit()
         return jsonify({"session_id": session_id, "result": True})
