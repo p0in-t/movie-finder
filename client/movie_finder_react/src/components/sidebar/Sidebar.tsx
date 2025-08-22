@@ -91,8 +91,6 @@ export default function AppSidebar() {
     const [ settingsDialogOpen, setSettingsDialogOpen ] = useState(false)
 
     const sendGetSessions = async () => {
-        console.log("trying to get sessions")
-
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(`${apiUrl}/users/get-sessions`, {
@@ -129,8 +127,6 @@ export default function AppSidebar() {
     };
     
     const sendStartSession = async () => {
-        console.log("trying to start session")
-
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(`${apiUrl}/users/start-session`, {
@@ -196,7 +192,6 @@ export default function AppSidebar() {
 
     const handleCreateSession = async () => {
         const newSessionID = await sendStartSession();
-        console.log(isLoggedIn, newSessionID, username);
         if (newSessionID !== null  && newSessionID !== undefined) {
             setUserCtx(prevSettings => ({
                 ...prevSettings,
@@ -214,19 +209,16 @@ export default function AppSidebar() {
                     }
                 ]
             }));
-            console.log(isLoggedIn, newSessionID, username);
             navigate(`/chat/${newSessionID}`);
         }
     }
 
     const handleSelectChat = (id: string) => {
-        console.log(userSessions);
         if (id !== null && id !== undefined) {
             setUserCtx(prevSettings => ({
                 ...prevSettings,
                 sessionID: id
             }));
-            console.log(isLoggedIn, id, username);
             navigate(`/chat/${id}`);
         }
     }

@@ -104,12 +104,9 @@ function App() {
   const setUserCtx = setUser;
 
   const checkAuthStatus = async () => {
-    console.log("Checking auth status with the backend...");
-
     const token = localStorage.getItem('token');
 
     if (!token) {
-      console.log("No token found. User is logged out.");
       return;
     }
 
@@ -128,8 +125,6 @@ function App() {
       }
 
       const userData = await response.json();
-
-      console.log("Session verified. Setting user context.");
       
       setUserCtx(prevSettings => ({
         ...prevSettings,

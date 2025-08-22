@@ -19,8 +19,6 @@ const Home = () => {
     const { id } = useParams<{ id: string }>();
 
     const sendStartSession = async () => {
-        console.log("trying to start session")
-
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(`${apiUrl}/users/start-session`, {
@@ -57,7 +55,6 @@ const Home = () => {
 
     const handleCreateSession = async () => {
         const newSessionID = await sendStartSession();
-        console.log(isLoggedIn, newSessionID, username);
         if (newSessionID !== null && newSessionID !== undefined) {
             setUserCtx(prevSettings => ({
                 ...prevSettings,
@@ -75,14 +72,11 @@ const Home = () => {
                     }
                 ]
             }));
-            console.log(isLoggedIn, newSessionID, username);
             navigate(`/chat/${newSessionID}`);
         }
     }
 
     const sendPromptToBackend = async (promptText: string, sid: string, skeletonMessageId: number) => {
-        console.log(sessionID)
-
         if (!(isLoggedIn && sessionID !== "" && isActive && emailVerified))
             throw new Error(`User is not authorized`);
 
@@ -123,8 +117,6 @@ const Home = () => {
     };
 
     const sendGetSession = async (sid: string) => {
-        console.log("getting chat")
-
         if (!(isLoggedIn && isActive && emailVerified))
             throw new Error(`User is not authorized`);
 
@@ -146,8 +138,6 @@ const Home = () => {
 
             const data = await response.json();
             const result = data.result;
-
-            console.log("got messages: ", data)
 
             if (result && data.messages) {
                 const formattedMessages = data.messages.map((msg: { sender: string, message: string }, index: number) => ({
@@ -211,7 +201,6 @@ const Home = () => {
     }, [msgHistory]);
 
     useEffect(() => {
-        console.log(id, isLoggedIn, userID)
         if (id && isLoggedIn && userID) {
             const pendingMessage = localStorage.getItem('message_to_send');
 

@@ -157,7 +157,6 @@ export function Login() {
 
             setSuccessAction('success')
 
-            console.log("account has been created with id: ", data.user_id)
         } catch (error) {
             setSuccessAction('fail')
             console.error("Error connecting to the backend:", error);
