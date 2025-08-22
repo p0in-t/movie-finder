@@ -680,7 +680,7 @@ def populate_ce(connect, cursor):
     print('Adding CEs complete.')
 
 def work_db():
-    connect = psycopg2.connect(dbname='movies', user='postgres', password='8055', host='localhost')
+    connect = psycopg2.connect(dbname='your-db-name', user='your-user', password='your-password', host='your-host')
     cursor = connect.cursor()
 
     populate_nce(connect, cursor)
