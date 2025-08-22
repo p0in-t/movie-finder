@@ -19,3 +19,4 @@ cryptography
 fastapi
 pyjwt
 pydantic[email]
+uvicorn[standard]
