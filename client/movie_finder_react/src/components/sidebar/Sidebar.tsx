@@ -2,11 +2,9 @@ import { useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
 import { AppContext, UserContext, SettingsContext, type Session } from '../../App';
 import { Button } from "@/components/ui/button";
-import { Settings, ChevronsLeft, Menu, Contact, Info, ChevronUp, MessageCirclePlus, UserRound, HomeIcon } from "lucide-react";
-import ContactForm from "../contact/Contact"
+import { ChevronsLeft, Menu, ChevronUp, MessageCirclePlus, UserRound, HomeIcon } from "lucide-react";
 import {
     Dialog,
-    DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   Sidebar,
