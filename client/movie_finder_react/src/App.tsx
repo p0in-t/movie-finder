@@ -2,6 +2,7 @@ import { createContext, useEffect, useState } from 'react';
 import './App.css'
 import NavRoutes from "./components/nav_routes/NavRoutes";
 import Navbar from "./components/navbar/Navbar";
+import type { JwtPayload } from 'jwt-decode';
 
 interface SettingsContextType {
   geminiApiKey: string;
@@ -13,7 +14,7 @@ const defaultSettingsContextValue: SettingsContextType = {
   setSettingsCtx: () => { },
 };
 
-type Session = { "session_id": string, "title": string, "started_at": Date};
+export type Session = { "session_id": string, "title": string, "started_at": Date};
 
 interface AppContextType {
   userSessions: Session[];
@@ -28,7 +29,7 @@ const defaultAppContextValue: AppContextType = {
 interface UserContextType {
   isLoggedIn: boolean;
   sessionID: string;
-  userID: number;
+  userID: string;
   email: string;
   username: string;
   isActive: boolean;
@@ -41,7 +42,7 @@ interface UserContextType {
 const defaultUserContextValue: UserContextType = {
   isLoggedIn: false,
   sessionID: "",
-  userID: -1,
+  userID: "",
   email: "",
   username: "user",
   isActive: false,
@@ -51,11 +52,20 @@ const defaultUserContextValue: UserContextType = {
   setUserCtx: () => { },
 };
 
+export interface JWTPayload extends JwtPayload {
+  sub: string;
+  username: string;
+  is_active: boolean;
+  is_admin: boolean;
+  email_verified: boolean;
+}
+
 export const AppContext = createContext<AppContextType>(defaultAppContextValue);
 export const UserContext = createContext<UserContextType>(defaultUserContextValue);
 export const SettingsContext = createContext<SettingsContextType>(defaultSettingsContextValue);
 
 function App() {
+  const apiUrl = import.meta.env.VITE_APP_API_URL;
   const [settings, setSettings] = useState({
     geminiApiKey: "",
   });
@@ -67,7 +77,7 @@ function App() {
   const [user, setUser] = useState({
     isLoggedIn: false,
     sessionID: "",
-    userID: -1,
+    userID: "",
     email: "",
     username: "user",
     isActive: false,
@@ -94,48 +104,58 @@ function App() {
   const setUserCtx = setUser;
 
   const checkAuthStatus = async () => {
-    console.log("trying to get auth status")
+    console.log("Checking auth status with the backend...");
+
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      console.log("No token found. User is logged out.");
+      return;
+    }
 
     try {
-      const response = await fetch('https://movie-finder-980543701851.europe-west1.run.app/api/user/auth-status', {
+      const response = await fetch(`${apiUrl}/users/auth-status`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         credentials: 'include',
       });
 
       if (!response.ok) {
-        throw new Error(`Network response was not ok: ${response.statusText}`);
+        throw new Error(`Session verification failed: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const userData = await response.json();
 
-      const result = data.result;
-
-      if (!result) {
-        setUserCtx(prevSettings => ({
-          ...prevSettings,
-          isLoggedIn: false 
-        }));
-        throw new Error(`Could not authorize user`);
-      }
-
+      console.log("Session verified. Setting user context.");
+      
       setUserCtx(prevSettings => ({
         ...prevSettings,
         isLoggedIn: true,
-        sessionID: "",
-        username: data.username,
-        userID: data.user_id,
-        isActive: data.is_active,
-        isAdmin: data.is_admin,
-        emailVerified: data.email_verified,
-        hasGeminiAPIKey: data.has_gemini_api_key,
-      }))
+        userID: userData.sub,
+        username: userData.username,
+        isActive: userData.is_active,
+        isAdmin: userData.is_admin,
+        emailVerified: userData.email_verified,
+      }));
+
     } catch (error) {
-      console.error("Error checking auth status", error);
-    } finally {
-      // setIsResponding(false);
+      console.error("Error verifying session:", error);
+
+      localStorage.removeItem("token");
+
+      setUserCtx(prevSettings => ({
+        ...prevSettings,
+        isLoggedIn: false,
+        sessionID: "",
+        userID: "",
+        username: "user",
+        isActive: false,
+        isAdmin: false,
+        emailVerified: false,
+      }));
     }
   };
 

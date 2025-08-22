@@ -3,16 +3,82 @@ import { useState, useEffect, useRef, useContext } from 'react';
 import AppSidebar from "../sidebar/Sidebar"
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from '../ui/skeleton';
-import { UserContext } from '@/App';
+import { AppContext, UserContext } from '@/App';
 import { useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
+    const apiUrl = import.meta.env.VITE_APP_API_URL;
+    const navigate = useNavigate()
     const [messageInput, setMessageInput] = useState('');
     const [msgHistory, setMsgHistory] = useState<{ id: number, text: string, isUser: boolean, isLoading?: boolean }[]>([]);
     const [isResponding, setIsResponding] = useState(false);
     const chatDisplayRef = useRef<HTMLDivElement>(null);
-    const { isLoggedIn, userID, sessionID, username, isActive, emailVerified } = useContext(UserContext);
+    const { isLoggedIn, userID, sessionID, username, isActive, emailVerified, setUserCtx } = useContext(UserContext);
+    const { setAppCtx } = useContext(AppContext);
     const { id } = useParams<{ id: string }>();
+
+    const sendStartSession = async () => {
+        console.log("trying to start session")
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${apiUrl}/users/start-session`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+
+                },
+                credentials: 'include',
+            });
+
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            const result = data.result;
+
+            if (!result) {
+                throw new Error(`Could not start session`);
+            }
+
+            return data.session_id;
+
+        } catch (error) {
+            console.error("Error connecting to the backend:", error);
+
+        } finally {
+            // setIsResponding(false);
+        }
+    };
+
+    const handleCreateSession = async () => {
+        const newSessionID = await sendStartSession();
+        console.log(isLoggedIn, newSessionID, username);
+        if (newSessionID !== null && newSessionID !== undefined) {
+            setUserCtx(prevSettings => ({
+                ...prevSettings,
+                sessionID: newSessionID
+            }));
+            setAppCtx(prev => ({
+                ...prev,
+                userSessions: [
+                    ...prev.userSessions,
+                    {
+                        session_id: newSessionID,
+                        title: "Untitled chat",
+                        started_at: new Date(),
+
+                    }
+                ]
+            }));
+            console.log(isLoggedIn, newSessionID, username);
+            navigate(`/chat/${newSessionID}`);
+        }
+    }
 
     const sendPromptToBackend = async (promptText: string, sid: string, skeletonMessageId: number) => {
         console.log(sessionID)
@@ -22,10 +88,12 @@ const Home = () => {
 
         setIsResponding(true);
         try {
-            const response = await fetch('https://movie-finder-980543701851.europe-west1.run.app/api/process', {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${apiUrl}/process`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({ prompt: promptText, session_id: sid }),
                 credentials: 'include',
@@ -61,10 +129,12 @@ const Home = () => {
             throw new Error(`User is not authorized`);
 
         try {
-            const response = await fetch('https://movie-finder-980543701851.europe-west1.run.app/api/user/get-chat', {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${apiUrl}/users/get-chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({ session_id: sid }),
                 credentials: 'include',
@@ -102,15 +172,26 @@ const Home = () => {
 
     const handleSendMessage = () => {
         const trimmedMessage = messageInput.trim();
-        if (trimmedMessage && !isResponding) {
-            const userMessage = { id: Date.now(), text: trimmedMessage, isUser: true };
-            const skeletonMessageId = Date.now() + 1;
-            const skeletonMessage = { id: skeletonMessageId, text: '', isUser: false, isLoading: true };
 
-            setMsgHistory(prevMessages => [...prevMessages, userMessage, skeletonMessage]);
-            setMessageInput('');
-            sendPromptToBackend(trimmedMessage, sessionID, skeletonMessageId);
+        if (!trimmedMessage || isResponding) {
+            return;
         }
+
+        if (!id) {
+            localStorage.setItem('message_to_send', trimmedMessage);
+            handleCreateSession()
+            return
+        }
+
+        const currentSessionID = id;
+        const userMessage = { id: Date.now(), text: trimmedMessage, isUser: true };
+        const skeletonMessageId = Date.now() + 1;
+        const skeletonMessage = { id: skeletonMessageId, text: '', isUser: false, isLoading: true };
+
+        setMsgHistory(prevMessages => [...prevMessages, userMessage, skeletonMessage]);
+        setMessageInput('');
+        if (currentSessionID) 
+            sendPromptToBackend(trimmedMessage, currentSessionID, skeletonMessageId);
     };
 
     const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -130,20 +211,29 @@ const Home = () => {
     }, [msgHistory]);
 
     useEffect(() => {
-        console.log("from useffect for loading chat")
+        console.log(id, isLoggedIn, userID)
+        if (id && isLoggedIn && userID) {
+            const pendingMessage = localStorage.getItem('message_to_send');
 
-        if (
-            isLoggedIn &&
-            id &&
-            sessionID !== "" &&
-            userID !== -1
-        ) {
-            console.log("getting chat useeffect")
-            handleGetChat(sessionID);
-        }
-        else
+            if (pendingMessage) {
+                localStorage.removeItem('message_to_send');
+
+                const userMessage = { id: Date.now(), text: pendingMessage, isUser: true };
+                const skeletonMessageId = Date.now() + 1;
+                const skeletonMessage = { id: skeletonMessageId, text: '', isUser: false, isLoading: true };
+
+                setMsgHistory([userMessage, skeletonMessage]);
+                setMessageInput('');
+
+                sendPromptToBackend(pendingMessage, id, skeletonMessageId);
+
+            } else {
+                handleGetChat(id);
+            }
+        } else {
             setMsgHistory([]);
-    }, [id, isLoggedIn, sessionID, userID]);
+        }
+    }, [id, isLoggedIn, userID]);
 
     return (
         <div className='main-container flex h-screen'>

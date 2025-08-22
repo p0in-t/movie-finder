@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
-import { AppContext, UserContext, SettingsContext } from '../../App';
+import { AppContext, UserContext, SettingsContext, type Session } from '../../App';
 import { Button } from "@/components/ui/button";
-import { Settings, ChevronsLeft, Menu, Contact, Info, ChevronUp, MessageCirclePlus, UserRound } from "lucide-react";
+import { Settings, ChevronsLeft, Menu, Contact, Info, ChevronUp, MessageCirclePlus, UserRound, HomeIcon } from "lucide-react";
 import ContactForm from "../contact/Contact"
 import {
     Dialog,
@@ -19,80 +19,89 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  useSidebar,
 } from "@/components/ui/sidebar"
+import { useIsMobile } from "@/hooks/use-mobile"
 import SettingsApp from "../settings/Settings";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Login } from "../login/Login";
 
+function AppSidebarControlButton({open, isMobile, setOpen} : {open: boolean, isMobile: boolean, setOpen: React.Dispatch<React.SetStateAction<boolean>>}) {
+    const { setOpenMobile, openMobile } = useSidebar()
+
+    return (
+        <Button
+            variant="outline"
+            size="icon"
+            className={`fixed top-4 z-50 h-10 w-10 rounded-full shadow-lg bg-neutral-600 hover:bg-neutral-500 border-gray-800 transition-all duration-300 hover:shadow-xl
+            ${isMobile
+                ? (openMobile ? 'left-[19rem]' : 'left-[1rem]')
+                : (open ? 'left-[17rem]' : 'left-[4rem]')
+            }
+`}
+            onClick={() => isMobile ? setOpenMobile(true) : setOpen(!open)}
+            aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+        >
+            {open ? (
+                <ChevronsLeft className="h-4 w-4" />
+            ) : (
+                <Menu className="h-4 w-4" />
+            )}
+        </Button>
+    )
+}
+
+function Chats({ open, isLoggedIn, userSessions, handleSelectChat}: { open: boolean, isLoggedIn: boolean, userSessions: Session[], handleSelectChat: (id: string) => void }) {
+    const { openMobile } = useSidebar()
+
+    return (
+        <>
+        { ((open || openMobile) && (isLoggedIn ? userSessions.map((session) => (
+            <SidebarMenuItem key={session.session_id}>
+                <SidebarMenuButton onClick={() => handleSelectChat(session.session_id)} asChild className="text-gray-200 hover:bg-neutral-800 hover:text-white">
+                    <span>{session.title}</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+        )) : <></>))}
+        </>
+    )
+}
+
+function UserButton({ open, isLoggedIn, username }: {open: boolean, isLoggedIn: boolean, username: string}) {
+    const { openMobile } = useSidebar()
+
+    return (
+        <>
+            {(open || openMobile) && (
+                <span className="truncate max-w-[8rem]">
+                    {isLoggedIn ? username : "Log in"}
+                </span>
+            )}
+        </>
+    )
+}
+
 export default function AppSidebar() {
+    const apiUrl = import.meta.env.VITE_APP_API_URL;
+    const isMobile = useIsMobile()
     const navigate = useNavigate();
-    const [ open, setOpen ] = useState(true)
+    const [ open, setOpen ] = useState(false)
     const { isLoggedIn, username, setUserCtx } = useContext(UserContext)
     const { userSessions, setAppCtx } = useContext(AppContext)
     const { setSettingsCtx } = useContext(SettingsContext)
     const [ loginDialogOpen, setLoginDialogOpen ] = useState(false)
-
-    const sendLogoutRequest = async () => {
-        console.log("trying to log out")
-
-        try {
-            const response = await fetch('https://movie-finder-980543701851.europe-west1.run.app/api/user/log-out', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-            });
-
-            if (!response.ok) {
-                throw new Error(`Network response was not ok: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-
-            const result = data.result;
-
-            if (!result)
-                throw new Error(`Could not log user out`);
-
-            setUserCtx(prevSettings => ({
-                ...prevSettings,
-                isLoggedIn: false,
-                userID: -1,
-                email: "",
-                sessionID: "",
-                username: "user",
-                isActive: false,
-                isAdmin: false,
-                emailVerified: false,
-                hasGeminiAPIKey: false,
-            }));
-
-            setAppCtx(prevSettings => ({
-                ...prevSettings,
-                userSessions: [],
-            }));
-
-            setSettingsCtx(prevSettings => ({
-                ...prevSettings,
-                geminiApiKey: "",
-            }));
-
-        } catch (error) {
-            console.error("Error connecting to the backend:", error);
-        } finally {
-            // setIsResponding(false);
-        }
-    };
+    const [ settingsDialogOpen, setSettingsDialogOpen ] = useState(false)
 
     const sendGetSessions = async () => {
         console.log("trying to get sessions")
 
         try {
-            const response = await fetch('https://movie-finder-980543701851.europe-west1.run.app/api/user/get-sessions', {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${apiUrl}/users/get-sessions`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
                 },
                 credentials: 'include',
             });
@@ -125,10 +134,13 @@ export default function AppSidebar() {
         console.log("trying to start session")
 
         try {
-            const response = await fetch('https://movie-finder-980543701851.europe-west1.run.app/api/user/start-session', {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${apiUrl}/users/start-session`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+
                 },
                 credentials: 'include',
             });
@@ -157,7 +169,31 @@ export default function AppSidebar() {
     
     const handleLogout = () => {
         navigate(`/`);
-        sendLogoutRequest()
+
+        localStorage.removeItem('token');
+        
+        setUserCtx(prevSettings => ({
+            ...prevSettings,
+            isLoggedIn: false,
+            userID: "",
+            email: "",
+            sessionID: "",
+            username: "user",
+            isActive: false,
+            isAdmin: false,
+            emailVerified: false,
+            hasGeminiAPIKey: false,
+        }));
+
+        setAppCtx(prevSettings => ({
+            ...prevSettings,
+            userSessions: [],
+        }));
+
+        setSettingsCtx(prevSettings => ({
+            ...prevSettings,
+            geminiApiKey: "",
+        }));
     }
 
     const handleCreateSession = async () => {
@@ -201,6 +237,12 @@ export default function AppSidebar() {
         if (isLoggedIn)
             sendGetSessions()
     }, [isLoggedIn]);
+
+    useEffect(() => {
+        if (isMobile) {
+            setOpen(false)
+        }
+    }, [isMobile])
     
     return (
         <>
@@ -219,46 +261,18 @@ export default function AppSidebar() {
                 `}</style>
             )}
         <SidebarProvider open={open} onOpenChange={setOpen}>
-            <Sidebar collapsible="icon" className="dark bg-gray-900 border-gray-700">
+            <Sidebar collapsible="icon" className="dark bg-gray-900 border-neutral-700 focus:outline-none">
                 <SidebarContent className="bg-neutral-900">
                 <SidebarGroup>
                     <SidebarGroupLabel className="text-gray-200">Movie Finder</SidebarGroupLabel>
                     <SidebarGroupContent>
                     <SidebarMenu>
-                        <SidebarMenuItem key='contact'>
-                            <Dialog>
-                                <DialogTrigger asChild>
-                                    <SidebarMenuButton asChild className="text-gray-200 hover:bg-neutral-800 hover:text-white">
-                                        <a>
-                                            <Contact />
-                                            <span>Contact</span>
-                                        </a>
-                                    </SidebarMenuButton>
-                                </DialogTrigger>
-                                <ContactForm></ContactForm>
-                            </Dialog>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem key='about-us'>
+                        <SidebarMenuItem key='home'>
                             <SidebarMenuButton asChild className="text-gray-200 hover:bg-neutral-800 hover:text-white">
-                                <a href='/about'>
-                                    <Info/>
-                                    <span>About us</span>
+                                <a href='/'>
+                                    <HomeIcon />
+                                    <span>Home</span>
                                 </a>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem key='settings'>
-                            <SidebarMenuButton asChild className="text-gray-200 hover:bg-neutral-800 hover:text-white">
-                                <Dialog>
-                                    <DialogTrigger asChild>
-                                        <SidebarMenuButton asChild className="text-gray-200 hover:bg-neutral-800 hover:text-white">
-                                            <a>
-                                                <Settings />
-                                                <span>Settings</span>
-                                            </a>
-                                        </SidebarMenuButton>
-                                    </DialogTrigger>
-                                    <SettingsApp></SettingsApp>
-                                </Dialog>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem key='start-chat'>
@@ -276,13 +290,7 @@ export default function AppSidebar() {
                     <SidebarGroupLabel className="text-gray-200">Previous chats</SidebarGroupLabel>
                     <SidebarGroupContent>
                     <SidebarMenu>
-                        { isLoggedIn ? userSessions.map((session) => (
-                            <SidebarMenuItem key={session.session_id}>
-                                <SidebarMenuButton onClick={() => handleSelectChat(session.session_id)} asChild className="text-gray-200 hover:bg-neutral-800 hover:text-white">
-                                    <span>{session.title}</span>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        )) : <></>}
+                        <Chats open={open} userSessions={userSessions} isLoggedIn={isLoggedIn} handleSelectChat={handleSelectChat}></Chats>
                     </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
@@ -294,11 +302,7 @@ export default function AppSidebar() {
                                 <DropdownMenuTrigger asChild>
                                     <SidebarMenuButton className="flex items-center space-x-2">
                                         <UserRound className="w-6 h-6 flex-shrink-0" />
-                                        {open && (
-                                            <span className="truncate max-w-[8rem]">
-                                                {isLoggedIn ? username : "Log in"}
-                                            </span>
-                                        )}
+                                            <UserButton open={open} isLoggedIn={isLoggedIn} username={username}></UserButton>
                                         <ChevronUp className={`ml-auto transition-transform ${open ? 'rotate-180' : ''}`} />
                                     </SidebarMenuButton>
                                 </DropdownMenuTrigger>
@@ -316,11 +320,8 @@ export default function AppSidebar() {
                                         side="top"
                                         className="w-[--radix-popper-anchor-width] dark bg-neutral-900"
                                     >
-                                        <DropdownMenuItem>
-                                            <span>Account</span>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem>
-                                            <span>Billing</span>
+                                            <DropdownMenuItem onSelect={() => setSettingsDialogOpen(true)}>
+                                            <span>Settings</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onSelect={handleLogout}>
                                             <span>Sign out</span>
@@ -332,24 +333,13 @@ export default function AppSidebar() {
                     </SidebarMenu>
                 </SidebarFooter>
             </Sidebar>
+            <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
+                <SettingsApp/>
+            </Dialog>
             <Dialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
                 <Login />
             </Dialog>
-            <Button
-                variant="outline"
-                size="icon"
-                className={`fixed top-4 z-50 h-10 w-10 rounded-full shadow-lg bg-neutral-600 hover:bg-neutral-500 border-gray-800 transition-all duration-300 hover:shadow-xl ${
-                    open ? 'left-67' : 'left-15'
-                }`}
-                onClick={() => setOpen(!open)}
-                aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
-            >
-                {open ? (
-                    <ChevronsLeft className="h-4 w-4" />
-                ) : (
-                    <Menu className="h-4 w-4" />
-                )}
-            </Button>
+            <AppSidebarControlButton isMobile={isMobile} open={open} setOpen={setOpen}/>
         </SidebarProvider>
         </>
     )
