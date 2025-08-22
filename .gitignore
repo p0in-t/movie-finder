@@ -207,3 +207,6 @@ __marimo__/
 
 server/assets
 server/sbert_model
+
+movie_dataset_pipeline/assets/
+movie_dataset_pipeline/**/*.pkl
