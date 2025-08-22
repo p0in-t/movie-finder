@@ -16,3 +16,6 @@ gunicorn
 google-cloud-storage
 bcrypt
 cryptography
+fastapi
+pyjwt
+pydantic[email]

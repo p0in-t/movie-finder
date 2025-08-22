@@ -1,7 +1,7 @@
 import os
+import re
+from typing import Dict, List
 import psycopg2
-from flask import Flask, request, jsonify, session
-from flask_cors import CORS
 from dotenv import load_dotenv
 from llm import init_llm
 from movie_similarity_search import cloud_load_or_build, load_or_build_index
@@ -11,22 +11,118 @@ from sentence_transformers import SentenceTransformer
 import sys
 import uuid
 import time
-from threading import Lock
-import atexit
 from google.cloud import storage
 import bcrypt
 from cryptography.fernet import Fernet
+from fastapi import APIRouter, FastAPI, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from fastapi.middleware.cors import CORSMiddleware
+import jwt
+from jwt import PyJWTError
+from datetime import datetime, timedelta, timezone
+from pydantic import BaseModel, EmailStr, Field
+from contextlib import asynccontextmanager
 
 load_dotenv()
+
+APP_ENV = os.environ.get('APP_ENV')
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+if (APP_ENV == 'debug'):
+    DATABASE_URL  = os.environ.get('DATABASE_URL_DEBUG')
+else:
+    DATABASE_URL  = os.environ.get('DATABASE_URL')
 
 BUCKET_NAME = 'movies-db-bucket'
 MODEL_GCS_PREFIX = 'sbert_model/'
 LOCAL_MODEL_PATH = './sbert_model'
 
-app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY')
-CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://movie-finder-ivory.vercel.app"], supports_credentials=True)
-app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if not initialize_system():
+        print("FATAL: System initialization failed. Exiting.")
+        sys.exit(1)
+    print("System initialized successfully.")
+    
+    yield
+    
+    print("Server is shutting down. Performing cleanup...")
+
+app = FastAPI(lifespan=lifespan, debug=True, title="MovieFinder", summary="Made with love from ModelIntellect", version="0.0.1")
+user_router = APIRouter(prefix="/api/users", tags=["users"])
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+
+if (APP_ENV == 'debug'):
+    origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+else:
+    origins = [
+        "https://movie-finder-ivory.vercel.app"
+    ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    result: bool = True
+
+class SignupRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=6)
+
+class SignupResponse(BaseModel):
+    message: str
+    user_id: str
+    result: bool = True
+
+class SessionItem(BaseModel):
+    session_id: str
+    started_at: str
+    title: str
+
+class GetSessionsResponse(BaseModel):
+    sessions: List[SessionItem]
+    result: bool = True
+
+class Message(BaseModel):
+    id: int
+    sender: str
+    message: str
+    sent_at: str
+
+class GetChatRequest(BaseModel):
+    session_id: str
+
+class GetChatResponse(BaseModel):
+    messages: List[Message]
+    result: bool = True
+
+class ProcessRequest(BaseModel):
+    prompt: str
+    session_id: str
+
+class ProcessResponse(BaseModel):
+    answer: str
+    result: bool = True
+
+class GetStartSessionResponse(BaseModel):
+    session_id: str
+    result: bool = True
 
 FERNET_KEY = os.environ.get('FERNET_KEY')
 
@@ -34,6 +130,24 @@ if not FERNET_KEY:
     raise ValueError("FERNET_KEY environment variable not set")
 
 fernet = Fernet(FERNET_KEY)
+
+def create_access_token(data, expires_delta):
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=15))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, os.environ.get('JWT_SECRET_KEY'), algorithm=ALGORITHM)
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, os.environ.get('JWT_SECRET_KEY'), algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        return payload
+    except PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @dataclass
 class AppState:
@@ -86,7 +200,7 @@ def load_model_from_gcs():
     print(f"Loading model from newly downloaded files at {LOCAL_MODEL_PATH}")
     return SentenceTransformer(LOCAL_MODEL_PATH, device='cpu')
 
-def get_session_messages(session_id, user_id):
+def get_session_messages(session_id: str, user_id: str):
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -99,7 +213,7 @@ def get_session_messages(session_id, user_id):
         session_check = cur.fetchone()
 
         if not session_check:
-            return {"error": "Session not found or unauthorized", "result": False}
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, description="Session not found or unauthorized")
 
         cur.execute("""
             SELECT id, sender, message, sent_at
@@ -115,11 +229,11 @@ def get_session_messages(session_id, user_id):
             for row in messages
         ]
 
-        return { "messages": message_list, "result": True }
+        return { "messages": message_list }
 
     except Exception as e:
         print(f"Error retrieving chat messages: {e}")
-        return {"error": "Server error", "result": False}
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, description="Internal server error")
     finally:
         cur.close()
         conn.close()
@@ -127,7 +241,7 @@ def get_session_messages(session_id, user_id):
 def get_db_connection():
     try:
         print("Attempting to connect to the database...")
-        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        conn = psycopg2.connect(DATABASE_URL)
         
         print(f"Connection successful. Status: {conn.status}")
         
@@ -157,10 +271,13 @@ def initialize_system():
     print("Connecting to database...")
     conn = get_db_connection()
     cursor = conn.cursor()
-    # conn = None
-    # cursor = None
     print("Loading index and movie dataframe...")
-    movie_df, faiss_index = cloud_load_or_build(conn, cursor)
+
+    if (APP_ENV == 'debug'):
+        movie_df, faiss_index = load_or_build_index(conn, cursor)
+    else:
+        movie_df, faiss_index = cloud_load_or_build(conn, cursor)
+
     print("Loading model...")
     sbert_model = load_model_from_gcs()
     print("Initializing movie search tool...")
@@ -183,14 +300,14 @@ def initialize_system():
 
     return app_state.is_initialized
 
-@app.route('/api/user/start-session', methods=['GET'])
-def start_session():
-    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
+@user_router.get('/start-session', response_model=GetStartSessionResponse, status_code=status.HTTP_200_OK)
+async def start_session(current_user = Depends(get_current_user)):
+    user_id: str = current_user.get('sub')
+    is_active: bool = current_user.get('is_active')
+    email_verified: bool = current_user.get('email_verified')
 
-    if not session.get('logged_in'):
-        return jsonify({"error": "Unauthorized", "result": False}), 401
-
-    user_id = session.get('user_id')
+    if (not email_verified or not is_active):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User is not authorized")
 
     try:
         conn = get_db_connection()
@@ -200,26 +317,22 @@ def start_session():
             VALUES (%s)
             RETURNING id;
         """, (user_id,))
-        session_id = cur.fetchone()[0]
+        session_id: str = cur.fetchone()[0]
         conn.commit()
-        return jsonify({"session_id": session_id, "result": True})
+
+        return GetStartSessionResponse(session_id=session_id)
     except Exception as e:
         if conn:
             conn.rollback()
         print(f"Error starting new session: {e}")
-        return jsonify({"error": "Server error", "result": False}), 500
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server error")
     finally:
         cur.close()
         conn.close()
 
-@app.route('/api/user/get-sessions', methods=['GET'])
-def get_sessions():
-    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
-
-    if not session.get('logged_in'):
-        return jsonify({"error": "Unauthorized", "result": False}), 401
-
-    user_id = session.get('user_id')
+@user_router.get('/get-sessions', response_model=GetSessionsResponse, status_code=status.HTTP_200_OK)
+async def get_sessions(current_user = Depends(get_current_user)):
+    user_id: str = current_user.get('sub')
 
     try:
         conn = get_db_connection()
@@ -234,107 +347,70 @@ def get_sessions():
         sessions = cur.fetchall()
 
         session_list = [
-            {"session_id": row[0], "started_at": row[1], "title": row[2]}
+            {"session_id": row[0], "started_at": row[1].isoformat() if hasattr(row[1], 'isoformat') else str(row[1]), "title": row[2]}
             for row in sessions
         ]
 
-        return jsonify({"sessions": session_list, "result": True})
+        return GetSessionsResponse(sessions=session_list)
     except Exception as e:
-        print(f"Error starting new session: {e}")
-        return jsonify({"error": "Server error", "result": False}), 500
+        print(f"Error getting sessions: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server error")
     finally:
         cur.close()
         conn.close()
 
-@app.route('/api/user/get-chat', methods=['POST'])
-def get_chat_messages():
-    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
-
-    if not session.get('logged_in'):
-        return jsonify({"error": "Unauthorized", "result": False}), 401
-
-    user_id = session.get('user_id')
-    data = request.get_json(silent=True)
-
-    if data is None:
-        print("ERROR: Failed to decode JSON from request body.")
-        return jsonify({"error": "Invalid JSON or Content-Type header not set to application/json", "result": False}), 400
+@user_router.post('/get-chat', response_model=GetChatResponse, status_code=status.HTTP_200_OK)
+async def get_chat_messages(user_data: GetChatRequest, current_user = Depends(get_current_user)):
+    user_id: str = current_user.get('sub')
     
-    session_id = data.get('session_id')
+    session_id = user_data.session_id
 
     if not session_id:
-        return jsonify({"error": "Missing session_id", "result": False}), 400
+        raise HTTPException(status_code=400, detail="Missing session_id")
     
-    result = get_session_messages(session_id, user_id)
+    res = get_session_messages(session_id, user_id)
 
-    return jsonify(result)
+    return GetChatResponse(messages=res.get('messages'))
 
-@app.route('/api/user/sign-up', methods=['POST'])
-def user_create():
-    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
-
-    user_data = request.get_json(silent=True)
-
-    if user_data is None:
-        print("ERROR: Failed to decode JSON from request body.")
-        return jsonify({"error": "Invalid JSON or Content-Type header not set to application/json"}), 400
-    
-    required_fields = ['username', 'email', 'password']
-
-    if not all(field in user_data for field in required_fields):
-        return {"error": "Missing required fields."}, 400
-    
-    username = user_data.get('username')
-    email = user_data.get('email')
-    password = user_data.get('password')
-
-    password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+@user_router.post('/sign-up', response_model=SignupResponse, status_code=status.HTTP_201_CREATED)
+async def user_create(user_data: SignupRequest):
+    password_hash = bcrypt.hashpw(user_data.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    raw_username = user_data.email.split("@")[0]
+    username = re.sub(r'\W+', '', raw_username)
 
     conn = get_db_connection()
 
     if conn is None:
-        return {"error": "Database connection failed."}, 500
-    
+        raise HTTPException(status_code=500, detail="Database connection failed.")
     try:
         with conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    INSERT INTO public.users (username, email, password_hash)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO public.users (username, email, password_hash, is_active, email_verified)
+                    VALUES (%s, %s, %s, %s, %s)
                     RETURNING id;
-                """, (username, email, password_hash))
+                """, (username, user_data.email, password_hash, True, True))
 
                 user_id = cur.fetchone()[0]
-                return {"message": "User created successfully.", "user_id": user_id}, 201
-    except psycopg2.IntegrityError as e:
+
+        return SignupResponse(message="User created successfully.", user_id=user_id)
+
+    except psycopg2.IntegrityError:
         if conn:
             conn.rollback()
-        return {"error": "Username or email already exists."}, 409
+        raise HTTPException(status_code=409, detail="Username or email already exists.")
     except Exception as e:
         if conn:
             conn.rollback()
-        return {"error": str(e)}, 500
+        raise HTTPException(status_code=500, detail=str(e))
+
     finally:
         conn.close()
 
-@app.route('/api/user/log-in', methods=['POST'])
-def user_login():
-    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
-
-    user_data = request.get_json()
-
-    if user_data is None:
-        print("ERROR: Failed to decode JSON from request body.")
-        return jsonify({"error": "Invalid JSON or Content-Type header not set to application/json", "result": False}), 400
-    
-    email = user_data.get('email')
-    password = user_data.get('password')
-
-    if not email or not password:
-        return jsonify({
-            "error": "Email and password required",
-            "result": False
-        }), 400
+@user_router.post('/log-in', response_model=LoginResponse, status_code=status.HTTP_200_OK)
+async def user_login(user_data: LoginRequest):
+    email = user_data.email
+    password = user_data.password
 
     try:
         conn = get_db_connection()
@@ -349,7 +425,7 @@ def user_login():
         user = cur.fetchone()
 
         if user is None:
-            return jsonify({"error": "Invalid email or password", "result": False}), 401
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
         user_id, username, password_hash, gemini_api_key, is_active, is_admin, email_verified = user
 
@@ -362,67 +438,42 @@ def user_login():
             password_hash = password_hash.tobytes().decode('utf-8')
 
         if not bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8')):
-            return jsonify({"error": "Invalid email or password", "result": False}), 401
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
         print("Logged in!")
-        print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
 
-        session['user_id'] = str(user_id)
-        session['username'] = username
-        session['logged_in'] = True
-        session['is_active'] = is_active
-        session['is_admin'] = is_admin
-        session['email_verified'] = email_verified
-        session['has_gemini_api_key'] = has_gemini_api_key
-
-        session.modified = True
-
-        print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
-
-        return jsonify({
-            "message": "Login successful",
-            "user_id": str(user_id),
+        token_data = {
+            "sub": str(user_id),
             "username": username,
             "is_active": is_active,
             "is_admin": is_admin,
             "email_verified": email_verified,
-            "has_gemini_api_key": has_gemini_api_key,
-            "result": True
-        })
+        }
+
+        access_token = create_access_token(data=token_data, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+
+        return LoginResponse(access_token=access_token)
     except Exception as e:
         print(f"Login error: {e}")
-        return jsonify({"error": "Internal server error", "result": False}), 500
-
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
     finally:
         cur.close()
         conn.close()
 
-@app.route('/api/user/auth-status', methods=['GET'])
-def auth_status():
-    if session.get("logged_in"):
-        return jsonify({
-            "result": True,
-            "user_id": session.get("user_id"),
-            "username": session.get("username"),
-            "is_active": session.get("is_active"),
-            "is_admin": session.get("is_admin"),
-            "email_verified": session.get("email_verified"),
-            "has_gemini_api_key": session.get("has_gemini_api_key"),
-        })
-    return jsonify({"result": False}), 401
+@user_router.get("/auth-status")
+async def auth_status(current_user = Depends(get_current_user)):
+    return {
+        "result": True,
+        "sub": current_user.get("sub"),
+        "username": current_user.get("username"),
+        "is_active": current_user.get("is_active"),
+        "is_admin": current_user.get("is_admin"),
+        "email_verified": current_user.get("email_verified"),
+    }
 
-@app.route('/api/user/log-out', methods=['POST'])
-def user_logout():
-    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
-    
-    if not session.get('logged_in'):
-        return jsonify({"message": "No active session to log out from", "result": False}), 200
-
-    session.clear()
-
-    session.modified = True
-
-    return jsonify({"message": "Logout successful", "result": True})
+@app.post('/api/user/log-out')
+async def user_logout(token: str = Depends(oauth2_scheme)):
+    return {"message": "Logout successful", "result": True}
 
 def format_chat_history(messages):
     formatted = []
@@ -440,196 +491,156 @@ def format_chat_history(messages):
 
     return formatted
 
-@app.route('/api/process', methods=['POST'])
-def process_data():
-    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
-    print("Entered /api/process route.")
-    
-    if not session.get('logged_in'):
-        return jsonify({"error": "Unauthorized","result": False}), 401
-        
-    data_from_frontend = request.get_json(silent=True)
+@app.post('/api/process', response_model=ProcessResponse, status_code=status.HTTP_200_OK)
+async def process_data(data: ProcessRequest, current_user = Depends(get_current_user)):
+    user_id: str = current_user.get('sub')
+    user_prompt = data.prompt
+    session_id = data.session_id
 
-    if data_from_frontend is None:
-        print("ERROR: Failed to decode JSON from request body.")
-        return jsonify({"error": "Invalid JSON or Content-Type header not set to application/json", "result": False}), 400
+    conn = None
+    cur = None
     
-    user_prompt = data_from_frontend.get('prompt')
-
-    if not user_prompt:
-            print("ERROR: 'prompt' key not found in JSON.")
-            return jsonify({"error": "Missing 'prompt' in request body", "result": False}), 400
-    
-    session_id = data_from_frontend.get("session_id")
-    
-    print(f"Received data from frontend: {data_from_frontend}")
-    print(f"Processing for session: {session_id}")
-    
-    user_id = session["user_id"]
-
-    print("Passing to LLM")
-
     try:
         conn = get_db_connection()
         cur = conn.cursor()
 
         cur.execute("""
-                    SELECT id FROM chat_session
-                    WHERE id = %s AND user_id = %s;
-                """, (session_id, user_id))
+            SELECT id FROM chat_session
+            WHERE id = %s AND user_id = %s;
+        """, (session_id, user_id))
 
         session_check = cur.fetchone()
-
         if not session_check:
-            return jsonify({"error": "Session not found or unauthorized", "result": False}), 401
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session not found or unauthorized")
 
         cur.execute("""
             INSERT INTO chat_message (session_id, sender, message)
             VALUES (%s, %s, %s);
         """, (session_id, "user", user_prompt))
 
-        try:
-            session_messages_result = get_session_messages(session_id, user_id)
+        session_messages_result = get_session_messages(session_id, user_id)
 
-            if not session_messages_result.get("result"):
-                return jsonify(session_messages_result), 500
-            
-            messages_list = session_messages_result.get("messages", [])
-    
-            session_messages = format_chat_history(messages_list)
-            
-            response = app_state.graph.invoke({
-                "input": user_prompt,
-                "messages": session_messages
-            }, {"recursion_limit": 50})
-            
-            print("Got response from LLM:")
-            print(response)
+        messages_list = session_messages_result.get("messages", [])
+        session_messages = format_chat_history(messages_list)
 
-            final_answer = response["final_answer"]
-            
-            if final_answer is None:
-                return jsonify({"error": "An internal error occurred while processing the request."}), 501
-            
-            if isinstance(response["final_answer"], dict) and "output" in response["final_answer"]:
-                final_answer = response["final_answer"]["output"]
-            else:
-                final_answer = str(response["final_answer"])
+        response = app_state.graph.invoke({
+            "input": user_prompt,
+            "messages": session_messages
+        }, {"recursion_limit": 50})
 
-            cur.execute("""
-                INSERT INTO chat_message (session_id, sender, message)
-                VALUES (%s, %s, %s);
-            """, (session_id, "ai", final_answer))
+        final_answer = response.get("final_answer")
+        if final_answer is None:
+            raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="LLM returned no answer")
 
-            conn.commit()
-            
-            return jsonify({"answer": final_answer, "result": True})
-        except Exception as e:
-            if conn:
-                conn.rollback()
-            print(f"ERROR: An exception occurred during LLM invocation: {e}")
-            return jsonify({"error": "An internal error occurred while processing the request.", "result": False}), 500
-    except Exception as e:
-            if conn:
-                conn.rollback()
-            print(f"Error occurred during chat history update: {e}")
-            return jsonify({"error": "Internal server error", "result": False}), 500
-    finally:
-            cur.close()
-            conn.close()
-    
-@app.route('/api/user/get-api-key', methods=['GET'])
-def get_user_api_key():
-    if not session.get('logged_in'):
-        return jsonify({"error": "Unauthorized", "result": False}), 401
-    
-    if not session.get('has_gemini_api_key'):
-        return jsonify({"api_key": None, "result": True})
-
-    user_id = session.get('user_id')
-
-    if not user_id:
-        return jsonify({"error": "Unauthorized", "result": False}), 401
-
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT gemini_api_key FROM users WHERE id = %s", (user_id,))
-        result = cur.fetchone()
-
-        if result and result[0]:
-            decrypted_key = decrypt_api_key(result[0])
-            return jsonify({"api_key": decrypted_key, "result": True})
+        if isinstance(final_answer, dict) and "output" in final_answer:
+            final_answer = final_answer["output"]
         else:
-            return jsonify({"api_key": None, "result": True})
+            final_answer = str(final_answer)
 
-    except Exception as e:
-        print("Error retrieving API key:", e)
-        return jsonify({"error": "Server error", "result": False}), 500
+        cur.execute("""
+            INSERT INTO chat_message (session_id, sender, message)
+            VALUES (%s, %s, %s);
+        """, (session_id, "ai", final_answer))
 
-    finally:
-        cur.close()
-        conn.close()
-
-@app.route('/api/user/update-settings', methods=['POST'])
-def update_user_settings():
-    print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
-
-    if not session.get('logged_in'):
-        return jsonify({"error": "Unauthorized", "result": False}), 401
-    
-    user_id = session.get('user_id')
-    data = request.get_json()
-
-    if not data:
-        return jsonify({"error": "No data provided", "result": False}), 400
-
-    allowed_fields = ['username', 'password_hash', 'gemini_api_key']
-    fields_to_update = {}
-    
-    for key in data:
-        if key in allowed_fields:
-            fields_to_update[key] = data[key]
-
-    if not fields_to_update:
-        return jsonify({"error": "No valid fields to update", "result": False}), 400
-    
-    set_clauses = []
-    values = []
-    for i, (field, value) in enumerate(fields_to_update.items(), start=1):
-        set_clauses.append(f"{field} = %s")
-        values.append(value)
-
-    set_clause = ", ".join(set_clauses)
-    values.append(user_id)
-
-    query = f"UPDATE users SET {set_clause} WHERE id = %s"
-
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute(query, values)
         conn.commit()
-        return jsonify({"message": "Settings updated", "result": True})
+
+        return ProcessResponse(answer=final_answer)
+
+    except HTTPException:
+        if conn:
+            conn.rollback()
+        raise
     except Exception as e:
         if conn:
             conn.rollback()
-        print(f"Error updating user settings: {e}")
-        return jsonify({"error": "Internal server error", "result": False}), 500
+        print(f"Internal error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
     finally:
-        cur.close()
-        conn.close()
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+    
+# @app.get('/api/user/get-api-key')
+# async def get_user_api_key():
+#     if not session.get('logged_in'):
+#         return jsonify({"error": "Unauthorized", "result": False}), 401
+    
+#     if not session.get('has_gemini_api_key'):
+#         return jsonify({"api_key": None, "result": True})
 
-def on_shutdown():
-    print("Server is shutting down. Performing cleanup...")
+#     user_id = session.get('user_id')
 
-atexit.register(on_shutdown)
+#     if not user_id:
+#         return jsonify({"error": "Unauthorized", "result": False}), 401
 
-if not initialize_system():
-    print("FATAL: System initialization failed. Exiting.")
-    exit(1)
+#     try:
+#         conn = get_db_connection()
+#         cur = conn.cursor()
+#         cur.execute("SELECT gemini_api_key FROM users WHERE id = %s", (user_id,))
+#         result = cur.fetchone()
 
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
-    exit(1)
+#         if result and result[0]:
+#             decrypted_key = decrypt_api_key(result[0])
+#             return jsonify({"api_key": decrypted_key, "result": True})
+#         else:
+#             return jsonify({"api_key": None, "result": True})
+
+#     except Exception as e:
+#         print("Error retrieving API key:", e)
+#         return jsonify({"error": "Server error", "result": False}), 500
+
+#     finally:
+#         cur.close()
+#         conn.close()
+
+# @app.post('/api/user/update-settings')
+# async def update_user_settings():
+#     print("printing session: ", session, "\nlogged in: ", session.get("logged_in"))
+
+#     if not session.get('logged_in'):
+#         return jsonify({"error": "Unauthorized", "result": False}), 401
+    
+#     user_id = session.get('user_id')
+#     data = request.get_json()
+
+#     if not data:
+#         return jsonify({"error": "No data provided", "result": False}), 400
+
+#     allowed_fields = ['username', 'password_hash', 'gemini_api_key']
+#     fields_to_update = {}
+    
+#     for key in data:
+#         if key in allowed_fields:
+#             fields_to_update[key] = data[key]
+
+#     if not fields_to_update:
+#         return jsonify({"error": "No valid fields to update", "result": False}), 400
+    
+#     set_clauses = []
+#     values = []
+#     for i, (field, value) in enumerate(fields_to_update.items(), start=1):
+#         set_clauses.append(f"{field} = %s")
+#         values.append(value)
+
+#     set_clause = ", ".join(set_clauses)
+#     values.append(user_id)
+
+#     query = f"UPDATE users SET {set_clause} WHERE id = %s"
+
+#     try:
+#         conn = get_db_connection()
+#         cur = conn.cursor()
+#         cur.execute(query, values)
+#         conn.commit()
+#         return jsonify({"message": "Settings updated", "result": True})
+#     except Exception as e:
+#         if conn:
+#             conn.rollback()
+#         print(f"Error updating user settings: {e}")
+#         return jsonify({"error": "Internal server error", "result": False}), 500
+#     finally:
+#         cur.close()
+#         conn.close())
+
+app.include_router(user_router)

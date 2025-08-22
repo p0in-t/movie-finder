@@ -269,9 +269,12 @@ def load_or_build_index(connect, cursor):
             print(f"Error loading existing files: {e}")
             traceback.print_exc()  # <== this prints the full stack trace of the error
             print("Rebuilding index...")
-    
-    print("Building new FAISS index and dataframe...")
-    movie_df, faiss_index = build_index()
+
+    if (os.path.exists(DF_PATH)):
+        print("Building new FAISS index and dataframe...")
+        movie_df, faiss_index = build_index()
+    else:
+        movie_df, faiss_index = load_all_movies_and_build_index(connect, cursor)
     
     print("Saving index and dataframe for future use...")
     os.makedirs('assets', exist_ok=True)
