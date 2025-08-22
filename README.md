@@ -40,4 +40,4 @@ movie-finder/
 
 - Improve recommendation diversity with hybrid search
   
-- Expand UI with advanced filters (mood, genre, themes)
+- Expand classified parameters for better similarity search
