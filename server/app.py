@@ -389,7 +389,7 @@ async def user_create(user_data: SignupRequest):
                     INSERT INTO public.users (username, email, password_hash, is_active, email_verified)
                     VALUES (%s, %s, %s, %s, %s)
                     RETURNING id;
-                """, (username, user_data.email, password_hash, True, True))
+                """, (username, user_data.email, password_hash, False, False))
 
                 user_id = cur.fetchone()[0]
 
@@ -494,11 +494,16 @@ def format_chat_history(messages):
 @app.post('/api/process', response_model=ProcessResponse, status_code=status.HTTP_200_OK)
 async def process_data(data: ProcessRequest, current_user = Depends(get_current_user)):
     user_id: str = current_user.get('sub')
+    is_active: str = current_user.get('is_active')
+    email_verified: str = current_user.get('email_verified')
     user_prompt = data.prompt
     session_id = data.session_id
 
     conn = None
     cur = None
+
+    if (not email_verified) or (not is_active):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not unauthorized")
     
     try:
         conn = get_db_connection()
