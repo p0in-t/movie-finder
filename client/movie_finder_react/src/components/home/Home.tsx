@@ -269,8 +269,8 @@ const Home = () => {
                                                         >
                                                             {msg.isLoading ? (
                                                                 <div className='message'>
-                                                                    <Skeleton className="dark h-4 w-48 mb-2" />
-                                                                    <Skeleton className="dark h-4 w-32" />
+                                                                    <Skeleton className="h-4 w-48 mb-2" />
+                                                                    <Skeleton className="h-4 w-32" />
                                                                 </div>
                                                             ) : (
                                                                 <p className='message'>{msg.text}</p>
