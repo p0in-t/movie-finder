@@ -22,7 +22,7 @@ import type { JWTPayload } from '@/App';
 import { useContext, useEffect, useState } from "react"
 import { jwtDecode } from 'jwt-decode'
 import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle2Icon } from "lucide-react"
+import { CheckCircle2Icon, XCircleIcon } from "lucide-react"
 import {
     Alert,
     AlertTitle,
@@ -39,38 +39,45 @@ export function Login() {
         email: "",
         password: "",
     });
-    const [ formState, setFormState ] = useState('login')
-    const [ submitted, setSubmitted ] = useState(false)
-    const [ successAction, setSuccessAction ] = useState('success')
+    const [formState, setFormState] = useState('login')
+    const [submitted, setSubmitted] = useState(false)
+    const [successAction, setSuccessAction] = useState('')
 
     function AlertSave() {
+        const isSuccess = successAction === 'success';
+
         return (
             <motion.div
-                key="alert"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.4, ease: "easeInOut" }}
-                style={{ overflow: "hidden" }}
-                className='dark mb-4 w-full max-w-sm'
+                key={`alert-${formState}-${successAction}`}
+                initial={{ opacity: 0, y: -20, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: "auto" }}
+                exit={{ opacity: 0, y: -20, height: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className='mb-4 w-full max-w-sm'
             >
-                <Alert>
-                    <CheckCircle2Icon />
-                    <AlertTitle>
-                        { formState === 'login' ? (
-                            (successAction === 'success' ? (
-                                `You have successfully logged in, welcome ${username}`
-                            ) : ("Failed to log in, incorrect email or password"))
+                <Alert className={isSuccess ? "border-green-500" : "border-red-500"}>
+                    {isSuccess ? <CheckCircle2Icon className="text-green-500" /> : <XCircleIcon className="text-red-500" />}
+                    <AlertTitle className={isSuccess ? "text-green-700" : "text-red-700"}>
+                        {formState === 'login' ? (
+                            isSuccess ?
+                                `Successfully logged in, welcome ${username}` :
+                                "Failed to log in, incorrect email or password"
                         ) : (
-                            (successAction === 'success' ? (
-                                "Successfully created account"
-                            ): ("Failed to create account, try with different email/password"))
+                            isSuccess ?
+                                "Successfully created account" :
+                                "Failed to create account, try with different email/password"
                         )}
                     </AlertTitle>
                 </Alert>
             </motion.div>
         );
     }
+
+    const handleFormSwitch = () => {
+        setSubmitted(false);
+        setSuccessAction('');
+        setFormState(prevState => prevState === 'login' ? 'signup' : 'login');
+    };
 
     const sendLoginInfo = async (email: string, password: string) => {
         try {
@@ -100,9 +107,9 @@ export function Login() {
             if (data.access_token) {
                 localStorage.setItem('token', data.access_token);
             }
-           
+
             setSuccessAction('success')
-            
+
             const user = jwtDecode<JWTPayload>(data.access_token)
 
             const lUserID = String(user.sub);
@@ -124,9 +131,6 @@ export function Login() {
         } catch (error) {
             setSuccessAction('fail')
             console.error("Error connecting to the backend:", error);
-
-        } finally {
-            // setIsResponding(false);
         }
     };
 
@@ -160,9 +164,6 @@ export function Login() {
         } catch (error) {
             setSuccessAction('fail')
             console.error("Error connecting to the backend:", error);
-
-        } finally {
-            // setIsResponding(false);
         }
     };
 
@@ -207,13 +208,19 @@ export function Login() {
     };
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setSubmitted(false)
-            setSuccessAction('')
-        }, 3500);
+        let timer: NodeJS.Timeout;
 
-        return () => clearTimeout(timer);
-    }, [submitted])
+        if (submitted && successAction !== '') {
+            timer = setTimeout(() => {
+                setSubmitted(false)
+                setSuccessAction('')
+            }, 3500);
+        }
+
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
+    }, [submitted, successAction])
 
     return (
         <DialogContent className="p-0 m-0 dark border-none shadow-none w-auto max-w-max">
@@ -225,23 +232,26 @@ export function Login() {
                 <AnimatePresence mode='wait'>
                     {(submitted && successAction !== '') && <AlertSave />}
                 </AnimatePresence>
+
                 <DialogClose className="absolute top-4 right-4" aria-label="Close"></DialogClose>
                 <VisuallyHidden asChild>
                     <DialogHeader className="mb-8">
-                        <DialogTitle>{ formState === 'login' ? ("Log in") : ("Sign up")}</DialogTitle>
+                        <DialogTitle>{formState === 'login' ? ("Log in") : ("Sign up")}</DialogTitle>
                     </DialogHeader>
                 </VisuallyHidden>
                 <Card className="w-[calc(100vw-1rem)] max-w-sm">
                     <CardHeader>
-                        <CardTitle>{formState === 'login' ? ("Log in to your account") : ("Create an account") }</CardTitle>
+                        <CardTitle>{formState === 'login' ? ("Log in to your account") : ("Create an account")}</CardTitle>
                         <CardDescription>
                             {formState === 'login' ? "Enter your email below to log in to your account" :
-                            ("Enter you email below to create your account")}
+                                ("Enter your email below to create your account")}
                         </CardDescription>
                         <CardAction>
-                            < Button 
-                                onClick={() => formState === 'login' ? setFormState('signup') : setFormState('login')} 
-                                variant="link">{formState === 'login' ? ("Sign up") : ("Log in")}
+                            <Button
+                                onClick={handleFormSwitch}
+                                variant="link"
+                            >
+                                {formState === 'login' ? ("Sign up") : ("Log in")}
                             </Button>
                         </CardAction>
                     </CardHeader>
@@ -295,6 +305,7 @@ export function Login() {
                                         />
                                     </div>
                                     <div className="grid gap-2">
+                                        <Label htmlFor="password">Password</Label>
                                         <Input
                                             value={localSignupInfo.password}
                                             onChange={handleSignupInputChange}
@@ -306,7 +317,7 @@ export function Login() {
                                     </div>
                                 </div>
                             </form>
-                            )}
+                        )}
                     </CardContent>
                     {formState === 'login' ? (
                         <CardFooter className="flex-col gap-2">
@@ -317,7 +328,7 @@ export function Login() {
                                 Login with Google
                             </Button>
                         </CardFooter>
-                    ): (
+                    ) : (
                         <CardFooter className="flex-col gap-2">
                             <Button type="submit" form="signupForm" className="w-full">
                                 Sign up

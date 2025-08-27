@@ -294,7 +294,15 @@ const Home = () => {
                             onChange={(e) => setMessageInput(e.target.value)}
                             value={messageInput}
                             onKeyDown={handleKeyDown}
-                            placeholder={isResponding ? "Waiting for response..." : "Type a message..."}
+                            placeholder=
+                            {   isLoggedIn ? (
+                                    emailVerified ? (
+                                        isResponding ?
+                                            "Waiting for response..." 
+                                            : "Type a message...") 
+                                            : "Please contact the administrator to verify your account")
+                            : "Log in or create an account to start talking"
+                                    }
                             disabled={isResponding || !isLoggedIn || !emailVerified || !isActive}
                         />
                         <button className='chat-send-button ml-2' onClick={handleSendMessage} disabled={isResponding || !isLoggedIn || !emailVerified || !isActive}>
